@@ -1,0 +1,14 @@
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://claimvision:claimvision_pass@db:5432/claimvision_ia
+      - MODELS_DIR=/app/models
+      - LOG_LEVEL=INFO
+      - ORIGINS=["*"]
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped

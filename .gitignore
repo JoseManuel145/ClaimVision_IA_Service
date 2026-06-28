@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+*.db
+*.pth
+*.pkl
+*.npy
+models/
+data/
+venv/
+.venv/
+.DS_Store
