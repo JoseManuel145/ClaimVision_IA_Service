@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Optional
-from app.domain.models import Inference, PredictionResult
+from typing import Optional, Protocol
+from app.domain.models import Inference, PredictionResult, OCRDocument
 
 
 class InferenceRepository(ABC):
@@ -11,6 +11,18 @@ class InferenceRepository(ABC):
     async def list_paginated(
         self, page: int, limit: int
     ) -> tuple[list[Inference], int]: ...
+
+
+class OCRService(Protocol):
+    async def extract(self, pdf_bytes: bytes) -> str: ...
+
+
+class OCRDocumentRepository(Protocol):
+    async def save(self, doc: OCRDocument) -> OCRDocument: ...
+
+    async def list_paginated(
+        self, page: int, limit: int
+    ) -> tuple[list[OCRDocument], int]: ...
 
 
 class EncoderService(ABC):

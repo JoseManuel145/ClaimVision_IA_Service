@@ -43,6 +43,28 @@ class RetrainResponse(BaseModel):
     trained_at: str
 
 
+class OcrResponse(BaseModel):
+    id: str
+    filename: str
+    text: str
+    page_count: int
+    created_at: str
+
+
+class OcrHistoryItem(BaseModel):
+    id: str
+    filename: str
+    page_count: int
+    created_at: str
+
+
+class OcrHistoryResponse(BaseModel):
+    data: list[OcrHistoryItem]
+    total: int
+    page: int
+    limit: int
+
+
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool

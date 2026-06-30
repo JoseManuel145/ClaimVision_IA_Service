@@ -1,6 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import uuid4
 
 
@@ -55,6 +54,29 @@ class TrainingMetrics:
     inertia: float
     mapping: list[dict]
     trained_at: str
+
+
+@dataclass
+class OCRDocument:
+    id: str
+    filename: str
+    text: str
+    page_count: int
+    created_at: datetime
+
+    @staticmethod
+    def create(
+        filename: str,
+        text: str,
+        page_count: int,
+    ) -> "OCRDocument":
+        return OCRDocument(
+            id=str(uuid4()),
+            filename=filename,
+            text=text,
+            page_count=page_count,
+            created_at=datetime.now(timezone.utc),
+        )
 
 
 @dataclass

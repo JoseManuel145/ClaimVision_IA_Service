@@ -2,14 +2,16 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_session
-from app.infra.db.repository import PostgresInferenceRepository
+from app.infra.db.repository import PostgresInferenceRepository, PostgresOCRDocumentRepository
 from app.infra.ml.preprocessor import TorchImagePreprocessor
 from app.infra.ml.encoder_service import TorchEncoderService
 from app.infra.ml.clustering_service import SklearnClusteringService
 from app.infra.mapping.cluster_mapper import JsonClusterMapper
+from app.infra.ocr.pymupdf_ocr_service import PyMuPDFOCRService
 from app.application.predict_use_case import PredictUseCase
 from app.application.history_use_case import HistoryUseCase
 from app.application.retrain_use_case import RetrainUseCase
+from app.application.ocr_use_case import OcrUseCase
 
 
 def get_repository(session: AsyncSession = Depends(get_session)) -> PostgresInferenceRepository:
@@ -59,3 +61,18 @@ def get_history_use_case(
 
 def get_retrain_use_case() -> RetrainUseCase:
     return RetrainUseCase(settings.MODELS_DIR)
+
+
+def get_ocr_repository(session: AsyncSession = Depends(get_session)) -> PostgresOCRDocumentRepository:
+    return PostgresOCRDocumentRepository(session)
+
+
+def get_ocr_service() -> PyMuPDFOCRService:
+    return PyMuPDFOCRService()
+
+
+def get_ocr_use_case(
+    repo: PostgresOCRDocumentRepository = Depends(get_ocr_repository),
+    ocr: PyMuPDFOCRService = Depends(get_ocr_service),
+) -> OcrUseCase:
+    return OcrUseCase(repo, ocr)
