@@ -25,6 +25,38 @@ class PostgresV2PredictionRepository:
         await self._session.commit()
         return pred
 
+    async def list_paginated(
+        self, page: int, limit: int
+    ) -> tuple[list[V2Prediction], int]:
+        offset = (page - 1) * limit
+        total_q = select(func.count(V2PredictionTable.id))
+        total_result = await self._session.execute(total_q)
+        total = total_result.scalar_one()
+
+        q = (
+            select(V2PredictionTable)
+            .order_by(V2PredictionTable.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await self._session.execute(q)
+        rows = result.scalars().all()
+
+        preds = [
+            V2Prediction(
+                id=r.id,
+                filename=r.filename,
+                class_id=r.class_id,
+                tipo_dano=r.tipo_dano,
+                severidad=r.severidad,
+                confianza=r.confianza,
+                prob_dist=r.prob_dist,
+                created_at=r.created_at,
+            )
+            for r in rows
+        ]
+        return preds, total
+
 
 class PostgresRetrainJobRepository:
     def __init__(self, session: AsyncSession):

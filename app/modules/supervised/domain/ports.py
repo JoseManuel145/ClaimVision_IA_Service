@@ -22,6 +22,10 @@ class ClassifierService(Protocol):
 class V2PredictionRepository(Protocol):
     async def save(self, pred: V2Prediction) -> V2Prediction: ...
 
+    async def list_paginated(
+        self, page: int, limit: int
+    ) -> tuple[list[V2Prediction], int]: ...
+
 
 class RetrainJobRepository(Protocol):
     async def save(self, job: RetrainJob) -> RetrainJob: ...

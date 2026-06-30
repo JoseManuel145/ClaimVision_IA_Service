@@ -2,6 +2,24 @@ from pydantic import BaseModel
 from typing import Optional
 
 
+class V2HistoryItem(BaseModel):
+    id: str
+    filename: str
+    class_id: int
+    tipo_dano: str
+    severidad: str
+    confianza: float
+    prob_dist: list[float]
+    created_at: str
+
+
+class V2HistoryResponse(BaseModel):
+    data: list[V2HistoryItem]
+    total: int
+    page: int
+    limit: int
+
+
 class V2PredictResponse(BaseModel):
     id: str
     filename: str

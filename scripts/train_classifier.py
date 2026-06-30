@@ -3,26 +3,20 @@ Script de entrenamiento offline del clasificador supervisado (ResNet18).
 
 Uso:
     python scripts/train_classifier.py \
-        --data-dir ./dataset \
-        --labels ./labels.csv \
+        --data-dir /ruta/images \
+        --labels /ruta/train.csv \
         --output-dir ./models \
-        --epochs 50 \
-        --lr 0.001
+        --num-classes 6 \
+        --label-map '{"1":0,"2":1,"3":2,"4":3,"5":4,"6":5}'
 
 Formato esperado de labels.csv:
     filename,label
-    img001.jpg,1
-    img002.jpg,3
+    img001.jpg,2
+    img002.jpg,4
     ...
 
-Labels:
-    0 = Sin Daño
-    1 = Rotura_Cristal
-    2 = Rayadura
-    3 = Abolladura
-    4 = Grietas
-    5 = Neumático_pinchado
-    6 = Faro_roto
+--label-map mapea los valores del CSV a las clases del modelo (0-based).
+--class-names lista los nombres de cada clase (opcional, por defecto: Clase_0...).
 """
 
 import argparse
@@ -39,27 +33,22 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 from PIL import Image
 
-CLASS_NAMES = [
-    "Sin Daño",
-    "Rotura_Cristal",
-    "Rayadura",
-    "Abolladura",
-    "Grietas",
-    "Neumático_pinchado",
-    "Faro_roto",
-]
 
-
-class CSVDataset(Dataset):
-    def __init__(self, data_dir: str, csv_path: str, transform):
+class MappedCSVDataset(Dataset):
+    def __init__(self, data_dir: str, csv_path: str, label_map: dict, transform):
         self.samples = []
         self.transform = transform
+        self.label_map = label_map
         with open(csv_path) as f:
             reader = csv.DictReader(f)
             for row in reader:
+                raw = int(row["label"])
+                if raw not in self.label_map:
+                    continue
+                mapped = self.label_map[raw]
                 img_path = Path(data_dir) / row["filename"]
                 if img_path.exists():
-                    self.samples.append((str(img_path), int(row["label"])))
+                    self.samples.append((str(img_path), mapped))
 
     def __len__(self):
         return len(self.samples)
@@ -71,7 +60,7 @@ class CSVDataset(Dataset):
         return tensor, label
 
 
-def build_model(num_classes: int = 7) -> nn.Module:
+def build_model(num_classes: int) -> nn.Module:
     model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     model.fc = nn.Linear(512, num_classes)
     return model
@@ -80,6 +69,23 @@ def build_model(num_classes: int = 7) -> nn.Module:
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Dispositivo: {device}")
+
+    try:
+        raw_map = json.loads(args.label_map) if args.label_map else None
+        label_map = {int(k): v for k, v in raw_map.items()} if raw_map else None
+    except json.JSONDecodeError:
+        print("Error: --label-map no es un JSON válido", file=sys.stderr)
+        sys.exit(1)
+
+    if label_map:
+        print(f"Mapeo de etiquetas: {label_map}")
+        num_classes = max(label_map.values()) + 1
+        if args.num_classes and args.num_classes != num_classes:
+            print(f"Advertencia: --num-classes ({args.num_classes}) no coincide con el máximo del mapeo ({num_classes}), usando {num_classes}")
+    else:
+        label_map = {}
+        num_classes = args.num_classes
+        print(f"Usando etiquetas del CSV tal cual, {num_classes} clases")
 
     train_transform = transforms.Compose([
         transforms.Resize(256),
@@ -98,11 +104,14 @@ def train(args):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    full_dataset = CSVDataset(args.data_dir, args.labels, train_transform)
+    full_dataset = MappedCSVDataset(args.data_dir, args.labels, label_map, train_transform)
     if len(full_dataset) == 0:
-        print("Error: no se encontraron imágenes", file=sys.stderr)
+        print("Error: no se encontraron imágenes válidas", file=sys.stderr)
         sys.exit(1)
     print(f"Total de muestras: {len(full_dataset)}")
+
+    labels_set = sorted(set(s[1] for s in full_dataset.samples))
+    print(f"Clases presentes: {labels_set}")
 
     val_size = int(len(full_dataset) * 0.2)
     train_size = len(full_dataset) - val_size
@@ -114,7 +123,7 @@ def train(args):
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
-    model = build_model()
+    model = build_model(num_classes)
     model.train()
     model.to(device)
 
@@ -126,6 +135,11 @@ def train(args):
     patience_counter = 0
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.class_names:
+        class_names = json.loads(args.class_names)
+    else:
+        class_names = [f"Clase_{i}" for i in range(num_classes)]
 
     for epoch in range(args.epochs):
         model.train()
@@ -178,7 +192,7 @@ def train(args):
             patience_counter = 0
             model_path = output_dir / "classifier_best.pth"
             torch.save(model.state_dict(), str(model_path))
-            mapping = {str(i): name for i, name in enumerate(CLASS_NAMES)}
+            mapping = {str(i): class_names[i] for i in range(num_classes)}
             with open(output_dir / "class_mapping.json", "w") as f:
                 json.dump(mapping, f, indent=2, ensure_ascii=False)
             print(f"  → Nuevo mejor modelo guardado (acc: {val_acc:.4f})")
@@ -196,6 +210,9 @@ if __name__ == "__main__":
     parser.add_argument("--data-dir", required=True, help="Directorio con las imágenes")
     parser.add_argument("--labels", required=True, help="CSV con filename,label")
     parser.add_argument("--output-dir", default="models", help="Directorio de salida")
+    parser.add_argument("--num-classes", type=int, default=7, help="Número de clases")
+    parser.add_argument("--label-map", help='JSON: mapeo de etiquetas CSV a clases. Ej: \'{"1":0,"2":1}\'')
+    parser.add_argument("--class-names", help='JSON: nombres de cada clase. Ej: \'["Sin Daño","Rotura"]\'')
     parser.add_argument("--epochs", type=int, default=50, help="Cantidad de épocas")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size")

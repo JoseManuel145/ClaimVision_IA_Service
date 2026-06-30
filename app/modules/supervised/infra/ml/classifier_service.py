@@ -1,7 +1,5 @@
 import json
 import os
-import shutil
-import tempfile
 from pathlib import Path
 
 import torch
@@ -10,16 +8,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 from PIL import Image
-
-CLASS_NAMES = [
-    "Sin Daño",
-    "Rotura_Cristal",
-    "Rayadura",
-    "Abolladura",
-    "Grietas",
-    "Neumático_pinchado",
-    "Faro_roto",
-]
 
 
 class ImageFolderDataset(Dataset):
@@ -44,10 +32,18 @@ class ImageFolderDataset(Dataset):
         return tensor, label
 
 
-def _build_model(num_classes: int = 7) -> nn.Module:
+def _build_model(num_classes: int) -> nn.Module:
     model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     model.fc = nn.Linear(512, num_classes)
     return model
+
+
+def _load_class_names(mapping_path: Path) -> list[str]:
+    if mapping_path.exists():
+        with open(mapping_path) as f:
+            mapping = json.load(f)
+        return [mapping[str(i)] for i in range(len(mapping))]
+    return []
 
 
 class ResNetClassifierService:
@@ -56,12 +52,19 @@ class ResNetClassifierService:
         self._models_dir = Path(models_dir)
         self._model_path = self._models_dir / "classifier_best.pth"
         self._mapping_path = self._models_dir / "class_mapping.json"
+        self._class_names = _load_class_names(self._mapping_path)
         self._load_model()
 
     def _load_model(self) -> None:
-        self._model = _build_model()
+        num_classes = max(len(self._class_names), 1)
+        self._model = _build_model(num_classes)
         if self._model_path.exists():
             state = torch.load(str(self._model_path), map_location=self._device, weights_only=True)
+            actual_num = state["fc.weight"].size(0)
+            if actual_num != num_classes:
+                self._class_names = [f"Clase_{i}" for i in range(actual_num)]
+                num_classes = actual_num
+                self._model = _build_model(num_classes)
             self._model.load_state_dict(state, strict=True)
         self._model.eval()
         self._model.to(self._device)
@@ -95,9 +98,12 @@ class ResNetClassifierService:
         dataset = ImageFolderDataset(data_dir, train_transform)
         if len(dataset) == 0:
             raise ValueError("No se encontraron imágenes válidas en los datos enviados")
+
+        labels_set = set(s[1] for s in dataset.samples)
+        num_classes = max(labels_set) + 1
         loader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=0)
 
-        model = _build_model()
+        model = _build_model(num_classes)
         model.train()
         model.to(device)
 
@@ -146,17 +152,19 @@ class ResNetClassifierService:
                 temp_path = str(self._model_path) + ".tmp"
                 torch.save(model.state_dict(), temp_path)
                 os.replace(temp_path, str(self._model_path))
-                mapping = {str(i): name for i, name in enumerate(CLASS_NAMES)}
-                with open(self._mapping_path, "w") as f:
-                    json.dump(mapping, f, indent=2, ensure_ascii=False)
 
             if patience_counter >= 5:
                 break
 
+        self._class_names = [f"Clase_{i}" for i in range(num_classes)]
+        mapping = {str(i): self._class_names[i] for i in range(num_classes)}
+        with open(self._mapping_path, "w") as f:
+            json.dump(mapping, f, indent=2, ensure_ascii=False)
+
         self._load_model()
 
     def get_class_names(self) -> list[str]:
-        return CLASS_NAMES
+        return self._class_names
 
     def get_severity(self, confidence: float) -> str:
         if confidence >= 0.8:

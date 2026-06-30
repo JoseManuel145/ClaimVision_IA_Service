@@ -5,14 +5,17 @@ from app.modules.supervised.presentation.schemas import (
     V2RetrainResponse,
     V2RetrainStatusResponse,
     V2HealthResponse,
+    V2HistoryResponse,
 )
 from app.modules.supervised.presentation.dependencies import (
     get_v2_predict_use_case,
     get_v2_retrain_use_case,
+    get_v2_history_use_case,
     get_classifier,
 )
 from app.modules.supervised.application.predict_use_case import V2PredictUseCase
 from app.modules.supervised.application.retrain_use_case import V2RetrainUseCase
+from app.modules.supervised.application.history_use_case import V2HistoryUseCase
 from app.modules.supervised.infra.ml.classifier_service import ResNetClassifierService
 
 router = APIRouter()
@@ -110,6 +113,21 @@ async def retrain_status(
         created_at=job.created_at.isoformat(),
         completed_at=job.completed_at.isoformat() if job.completed_at else None,
     )
+
+
+@router.get(
+    "/history",
+    response_model=V2HistoryResponse,
+    summary="[v2] Historial de inferencias",
+    description="Devuelve lista paginada de todas las clasificaciones realizadas.",
+)
+async def history_v2(
+    page: int = Query(1, ge=1, description="Número de página"),
+    limit: int = Query(20, ge=1, le=100, description="Elementos por página"),
+    use_case: V2HistoryUseCase = Depends(get_v2_history_use_case),
+):
+    result = await use_case.execute(page, limit)
+    return V2HistoryResponse(**result)
 
 
 @router.get(
