@@ -3,9 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
-from app.database import init_db
-from app.presentation.routes import router
+from app.core.config import settings
+from app.core.database import init_db
+from app.modules.nosupervised.presentation.routes import router as v1_router
+from app.modules.ocr.presentation.routes import router as ocr_router
+from app.modules.supervised.presentation.routes import router as v2_router
 
 
 @asynccontextmanager
@@ -30,7 +32,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api/v1")
+app.include_router(v1_router, prefix="/api/v1")
+app.include_router(ocr_router, prefix="/api/v1")
+app.include_router(v2_router, prefix="/api/v2")
 
 
 @app.get("/", tags=["Root"])

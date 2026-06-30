@@ -1,0 +1,474 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "ClaimVision IA Service",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/predict": {
+            "post": {
+                "summary": "Predecir tipo de da\u00f1o vehicular",
+                "description": "Recibe una imagen de da\u00f1o vehicular, la procesa a trav\u00e9s del encoder y K-Means, y devuelve el tipo de da\u00f1o, severidad y confianza.",
+                "operationId": "predict_api_v1_predict_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_predict_api_v1_predict_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PredictResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/history": {
+            "get": {
+                "summary": "Consultar historial de inferencias",
+                "description": "Devuelve una lista paginada de todas las inferencias realizadas.",
+                "operationId": "history_api_v1_history_get",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "N\u00famero de p\u00e1gina",
+                            "default": 1,
+                            "title": "Page"
+                        },
+                        "description": "N\u00famero de p\u00e1gina"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "description": "Elementos por p\u00e1gina",
+                            "default": 20,
+                            "title": "Limit"
+                        },
+                        "description": "Elementos por p\u00e1gina"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HistoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/retrain": {
+            "post": {
+                "summary": "Re-entrenar K-Means",
+                "description": "[Admin] Recibe un conjunto de im\u00e1genes y re-entrena el modelo K-Means. Requiere al menos K im\u00e1genes.",
+                "operationId": "retrain_api_v1_retrain_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_retrain_api_v1_retrain_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RetrainResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health": {
+            "get": {
+                "summary": "Verificar estado del servicio",
+                "description": "Indica si los modelos est\u00e1n cargados correctamente.",
+                "operationId": "health_api_v1_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "tags": [
+                    "Root"
+                ],
+                "summary": "Root",
+                "operationId": "root__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Body_predict_api_v1_predict_post": {
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "contentMediaType": "application/octet-stream",
+                        "title": "File",
+                        "description": "Imagen del da\u00f1o vehicular (JPG/PNG)"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file"
+                ],
+                "title": "Body_predict_api_v1_predict_post"
+            },
+            "Body_retrain_api_v1_retrain_post": {
+                "properties": {
+                    "k": {
+                        "type": "integer",
+                        "maximum": 20.0,
+                        "minimum": 2.0,
+                        "title": "K",
+                        "description": "N\u00famero de cl\u00fasteres"
+                    },
+                    "files": {
+                        "items": {
+                            "type": "string",
+                            "contentMediaType": "application/octet-stream"
+                        },
+                        "type": "array",
+                        "title": "Files",
+                        "description": "Im\u00e1genes para re-entrenamiento (m\u00ednimo K)"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "k",
+                    "files"
+                ],
+                "title": "Body_retrain_api_v1_retrain_post"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "HealthResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "model_loaded": {
+                        "type": "boolean",
+                        "title": "Model Loaded"
+                    },
+                    "k_value": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "K Value"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status",
+                    "model_loaded"
+                ],
+                "title": "HealthResponse"
+            },
+            "HistoryItem": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "filename": {
+                        "type": "string",
+                        "title": "Filename"
+                    },
+                    "cluster_id": {
+                        "type": "integer",
+                        "title": "Cluster Id"
+                    },
+                    "tipo_dano": {
+                        "type": "string",
+                        "title": "Tipo Dano"
+                    },
+                    "severidad": {
+                        "type": "string",
+                        "title": "Severidad"
+                    },
+                    "confianza": {
+                        "type": "number",
+                        "title": "Confianza"
+                    },
+                    "distancia_centroide": {
+                        "type": "number",
+                        "title": "Distancia Centroide"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "filename",
+                    "cluster_id",
+                    "tipo_dano",
+                    "severidad",
+                    "confianza",
+                    "distancia_centroide",
+                    "created_at"
+                ],
+                "title": "HistoryItem"
+            },
+            "HistoryResponse": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/HistoryItem"
+                        },
+                        "type": "array",
+                        "title": "Data"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "title": "Page"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "title": "Limit"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "data",
+                    "total",
+                    "page",
+                    "limit"
+                ],
+                "title": "HistoryResponse"
+            },
+            "PredictResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "filename": {
+                        "type": "string",
+                        "title": "Filename"
+                    },
+                    "tipo_dano": {
+                        "type": "string",
+                        "title": "Tipo Dano"
+                    },
+                    "severidad": {
+                        "type": "string",
+                        "title": "Severidad"
+                    },
+                    "confianza": {
+                        "type": "number",
+                        "title": "Confianza"
+                    },
+                    "distancia_centroide": {
+                        "type": "number",
+                        "title": "Distancia Centroide"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "filename",
+                    "tipo_dano",
+                    "severidad",
+                    "confianza",
+                    "distancia_centroide",
+                    "created_at"
+                ],
+                "title": "PredictResponse"
+            },
+            "RetrainResponse": {
+                "properties": {
+                    "k": {
+                        "type": "integer",
+                        "title": "K"
+                    },
+                    "silhouette": {
+                        "type": "number",
+                        "title": "Silhouette"
+                    },
+                    "davies_bouldin": {
+                        "type": "number",
+                        "title": "Davies Bouldin"
+                    },
+                    "inertia": {
+                        "type": "number",
+                        "title": "Inertia"
+                    },
+                    "mapping": {
+                        "items": {
+                            "additionalProperties": true,
+                            "type": "object"
+                        },
+                        "type": "array",
+                        "title": "Mapping"
+                    },
+                    "trained_at": {
+                        "type": "string",
+                        "title": "Trained At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "k",
+                    "silhouette",
+                    "davies_bouldin",
+                    "inertia",
+                    "mapping",
+                    "trained_at"
+                ],
+                "title": "RetrainResponse"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    },
+                    "input": {
+                        "title": "Input"
+                    },
+                    "ctx": {
+                        "type": "object",
+                        "title": "Context"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

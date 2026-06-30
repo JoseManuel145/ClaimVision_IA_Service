@@ -1,0 +1,281 @@
+openapi: 3.0.3
+info:
+  title: ClaimVision IA Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Default server
+
+paths:
+  /:
+    get:
+      summary: Root
+      operationId: root__get
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: 'null'
+                
+  /api/v1/predict:
+    post:
+      summary: Predecir tipo de daño vehicular
+      description: Recibe una imagen de daño vehicular, la procesa a través del encoder y K-Means, y devuelve el tipo de daño, severidad y confianza.
+      operationId: predict_api_v1_predict_post
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Imagen del daño vehicular (JPG/PNG)
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictResponse'
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /api/v1/history:
+    get:
+      summary: Consultar historial de inferencias
+      description: Devuelve una lista paginada de todas las inferencias realizadas.
+      operationId: history_api_v1_history_get
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Elementos por página
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /api/v1/retrain:
+    post:
+      summary: Re-entrenar K-Means
+      description: "[Admin] Recibe un conjunto de imágenes y re-entrena el modelo K-Means. Requiere al menos K imágenes."
+      operationId: retrain_api_v1_retrain_post
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - k
+                - files
+              properties:
+                k:
+                  type: integer
+                  description: Número de clústeres
+                  default: 2
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Imágenes para re-entrenamiento (mínimo K)
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrainResponse'
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /api/v1/health:
+    get:
+      summary: Verificar estado del servicio
+      description: Indica si los modelos están cargados correctamente.
+      operationId: health_api_v1_health_get
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    PredictResponse:
+      type: object
+      required:
+        - id
+        - filename
+        - tipo_dano
+        - severidad
+        - confianza
+        - distancia_centroide
+        - created_at
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        tipo_dano:
+          type: string
+        severidad:
+          type: string
+        confianza:
+          type: number
+        distancia_centroide:
+          type: number
+        created_at:
+          type: string
+
+    HistoryItem:
+      type: object
+      required:
+        - id
+        - filename
+        - cluster_id
+        - tipo_dano
+        - severidad
+        - confianza
+        - distancia_centroide
+        - created_at
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        cluster_id:
+          type: integer
+        tipo_dano:
+          type: string
+        severidad:
+          type: string
+        confianza:
+          type: number
+        distancia_centroide:
+          type: number
+        created_at:
+          type: string
+
+    HistoryResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - limit
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    RetrainResponse:
+      type: object
+      required:
+        - k
+        - silhouette
+        - davies_bouldin
+        - inertia
+        - mapping
+        - trained_at
+      properties:
+        k:
+          type: integer
+        silhouette:
+          type: number
+        davies_bouldin:
+          type: number
+        inertia:
+          type: number
+        mapping:
+          type: array
+          items:
+            type: object
+        trained_at:
+          type: string
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - model_loaded
+      properties:
+        status:
+          type: string
+        model_loaded:
+          type: boolean
+        k_value:
+          type: integer
+          nullable: true
+
+    ValidationError:
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+        msg:
+          type: string
+        type:
+          type: string
+        input:
+          nullable: true
+        ctx:
+          type: object
+
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'

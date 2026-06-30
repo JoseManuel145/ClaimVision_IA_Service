@@ -1,5 +1,5 @@
-from app.domain.models import Inference, PredictionResult
-from app.domain.ports import (
+from app.modules.nosupervised.domain.models import Inference, PredictionResult
+from app.modules.nosupervised.domain.ports import (
     InferenceRepository,
     ImagePreprocessor,
     EncoderService,
