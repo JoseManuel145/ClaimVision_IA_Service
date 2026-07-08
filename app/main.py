@@ -5,9 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.modules.nosupervised.presentation.routes import router as v1_router
+from app.modules.nosupervised.presentation.routes import router as nonsupervised
 from app.modules.ocr.presentation.routes import router as ocr_router
-from app.modules.supervised.presentation.routes import router as v2_router
+from app.modules.supervised.presentation.routes import router as supervised
+from app.modules.nlp.presentation.routes import router as nlp_router
 
 
 @asynccontextmanager
@@ -32,9 +33,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(v1_router, prefix="/api/v1")
+app.include_router(nonsupervised, prefix="/api/v1")
 app.include_router(ocr_router, prefix="/api/v1")
-app.include_router(v2_router, prefix="/api/v2")
+app.include_router(supervised, prefix="/api/v2")
+app.include_router(nlp_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])

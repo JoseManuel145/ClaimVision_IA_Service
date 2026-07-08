@@ -75,6 +75,8 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 umap-learn==0.5.12
 urllib3==2.7.0
+faster-whisper>=1.1.0
+httpx>=0.28.0
 uvicorn==0.49.0
 uvloop==0.22.1
 watchfiles==1.2.0

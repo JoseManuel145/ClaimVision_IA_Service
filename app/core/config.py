@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     ORIGINS: list[str] = ["*"]
     MAX_IMAGE_SIZE_MB: int = 10
+    OLLAMA_URL: str = "http://ollama:11434"
+    OLLAMA_MODEL: str = "qwen2.5:3b"
 
     class Config:
         env_file = ".env"
