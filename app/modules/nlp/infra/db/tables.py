@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from app.core.database import Base
 
 
@@ -29,6 +29,27 @@ class NlpDamageEntityTable(Base):
     sintoma = Column(String(255), nullable=False, default="")
     confianza = Column(Float, nullable=False, default=0)
     created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
+class NlpJobTable(Base):
+    __tablename__ = "nlp_jobs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    filename = Column(String(255), nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+    progress = Column(Integer, nullable=False, default=0)
+    result_id = Column(String, nullable=True)
+    error = Column(Text, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = Column(
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.now(timezone.utc),

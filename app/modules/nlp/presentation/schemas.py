@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class DamageEntityResponse(BaseModel):
@@ -16,6 +17,20 @@ class TranscribirResponse(BaseModel):
     duracion_seg: float
     entidades: list[DamageEntityResponse]
     created_at: str
+
+
+class TranscribirJobResponse(BaseModel):
+    job_id: str
+    status: str
+    progress: int
+
+
+class TranscribirJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    progress: int
+    result: Optional[TranscribirResponse] = None
+    error: Optional[str] = None
 
 
 class AnalizarRequest(BaseModel):

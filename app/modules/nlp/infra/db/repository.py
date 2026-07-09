@@ -1,8 +1,10 @@
 import uuid
+from datetime import datetime, timezone
+from typing import Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.modules.nlp.domain.models import VozTranscripcion, DamageEntity
-from app.modules.nlp.infra.db.tables import NlpTranscripcionTable, NlpDamageEntityTable
+from app.modules.nlp.domain.models import VozTranscripcion, DamageEntity, TranscripcionJob
+from app.modules.nlp.infra.db.tables import NlpTranscripcionTable, NlpDamageEntityTable, NlpJobTable
 
 
 class PostgresVozRepository:
@@ -96,3 +98,52 @@ class PostgresVozRepository:
             )
             for r in rows
         ]
+
+
+class PostgresTranscripcionJobRepository:
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    async def save(self, job: TranscripcionJob) -> TranscripcionJob:
+        row = NlpJobTable(
+            id=job.id,
+            filename=job.filename,
+            status=job.status,
+            progress=job.progress,
+            result_id=job.result_id,
+            error=job.error,
+            created_at=job.created_at,
+            updated_at=job.updated_at,
+        )
+        self._session.add(row)
+        await self._session.commit()
+        return job
+
+    async def get_by_id(self, job_id: str) -> Optional[TranscripcionJob]:
+        q = select(NlpJobTable).where(NlpJobTable.id == job_id)
+        result = await self._session.execute(q)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return TranscripcionJob(
+            id=row.id,
+            filename=row.filename,
+            status=row.status,
+            progress=row.progress,
+            result_id=row.result_id,
+            error=row.error,
+            created_at=row.created_at,
+            updated_at=row.updated_at,
+        )
+
+    async def update(self, job: TranscripcionJob) -> TranscripcionJob:
+        row = await self._session.get(NlpJobTable, job.id)
+        if not row:
+            return job
+        row.status = job.status
+        row.progress = job.progress
+        row.result_id = job.result_id
+        row.error = job.error
+        row.updated_at = job.updated_at
+        await self._session.commit()
+        return job

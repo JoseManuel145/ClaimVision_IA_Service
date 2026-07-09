@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Query
 from app.modules.nlp.presentation.schemas import (
     TranscribirResponse,
+    TranscribirJobResponse,
+    TranscribirJobStatusResponse,
     AnalizarRequest,
     AnalizarResponse,
     NlpHistoryResponse,
@@ -9,10 +11,12 @@ from app.modules.nlp.presentation.schemas import (
 )
 from app.modules.nlp.presentation.dependencies import (
     get_transcribir_use_case,
+    get_transcripcion_job_use_case,
     get_history_use_case,
     get_llm_service,
 )
 from app.modules.nlp.application.transcribir_use_case import TranscribirUseCase
+from app.modules.nlp.application.transcripcion_job_use_case import TranscripcionJobUseCase
 from app.modules.nlp.application.history_use_case import HistoryUseCase
 from app.modules.nlp.infra.llm.ollama_extractor import OllamaExtractor
 
@@ -41,13 +45,13 @@ def _build_transcripcion_response(t) -> TranscribirResponse:
 
 @router.post(
     "/nlp/transcribir",
-    response_model=TranscribirResponse,
-    summary="Transcribir audio y extraer danos",
-    description="Recibe un archivo de audio, lo transcribe con Whisper y extrae danos con LLM.",
+    response_model=TranscribirJobResponse,
+    summary="Transcribir audio y extraer danos (asincrono)",
+    description="Recibe un archivo de audio, crea un job y procesa en segundo plano. Consultar estado con GET /nlp/transcribir/status/{job_id}.",
 )
 async def transcribir(
     file: UploadFile = File(..., description="Archivo de audio"),
-    use_case: TranscribirUseCase = Depends(get_transcribir_use_case),
+    job_use_case: TranscripcionJobUseCase = Depends(get_transcripcion_job_use_case),
 ):
     if not file.content_type or not file.content_type.startswith("audio/"):
         raise HTTPException(status_code=400, detail="El archivo debe ser un audio")
@@ -57,8 +61,38 @@ async def transcribir(
     if len(contents) > 25 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="El audio excede 25MB")
 
-    transcripcion = await use_case.execute(contents, file.filename or "audio.m4a")
-    return _build_transcripcion_response(transcripcion)
+    job = await job_use_case.start_job(contents, file.filename or "audio.m4a")
+    return TranscribirJobResponse(job_id=job.id, status=job.status, progress=job.progress)
+
+
+@router.get(
+    "/nlp/transcribir/status/{job_id}",
+    response_model=TranscribirJobStatusResponse,
+    summary="Estado de transcripcion asincrona",
+    description="Devuelve el progreso del job. Si ya completo, incluye el resultado.",
+)
+async def transcribir_status(
+    job_id: str,
+    job_use_case: TranscripcionJobUseCase = Depends(get_transcripcion_job_use_case),
+    history_use_case: HistoryUseCase = Depends(get_history_use_case),
+):
+    job = await job_use_case.get_job_status(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job no encontrado")
+
+    result = None
+    if job.status == "completed" and job.result_id:
+        transcripcion = await history_use_case.get_by_id(job.result_id)
+        if transcripcion:
+            result = _build_transcripcion_response(transcripcion)
+
+    return TranscribirJobStatusResponse(
+        job_id=job.id,
+        status=job.status,
+        progress=job.progress,
+        result=result,
+        error=job.error,
+    )
 
 
 @router.post(

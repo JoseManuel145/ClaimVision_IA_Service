@@ -1,5 +1,5 @@
-from typing import Protocol
-from app.modules.nlp.domain.models import VozTranscripcion, DamageEntity
+from typing import Optional, Protocol
+from app.modules.nlp.domain.models import VozTranscripcion, DamageEntity, TranscripcionJob
 
 
 class SpeechToTextService(Protocol):
@@ -18,3 +18,11 @@ class VozRepository(Protocol):
     ) -> tuple[list[VozTranscripcion], int]: ...
 
     async def get_by_id(self, id: str) -> VozTranscripcion | None: ...
+
+
+class TranscripcionJobRepository(Protocol):
+    async def save(self, job: TranscripcionJob) -> TranscripcionJob: ...
+
+    async def get_by_id(self, job_id: str) -> Optional[TranscripcionJob]: ...
+
+    async def update(self, job: TranscripcionJob) -> TranscripcionJob: ...
