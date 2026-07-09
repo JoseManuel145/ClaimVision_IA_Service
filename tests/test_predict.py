@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from app.application.predict_use_case import PredictUseCase
-from app.domain.models import PredictionResult
+from app.modules.nosupervised.application.predict_use_case import PredictUseCase
+from app.modules.nosupervised.domain.models import PredictionResult
 
 
 @pytest.mark.asyncio
