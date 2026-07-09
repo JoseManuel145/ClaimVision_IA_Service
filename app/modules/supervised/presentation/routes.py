@@ -18,7 +18,7 @@ from app.modules.supervised.application.retrain_use_case import V2RetrainUseCase
 from app.modules.supervised.application.history_use_case import V2HistoryUseCase
 from app.modules.supervised.infra.ml.classifier_service import ResNetClassifierService
 
-router = APIRouter()
+router = APIRouter(tags=["Supervised"])
 
 
 @router.post(

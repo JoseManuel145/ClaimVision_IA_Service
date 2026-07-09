@@ -11,7 +11,7 @@ from app.modules.ocr.presentation.dependencies import (
 from app.modules.ocr.application.ocr_use_case import OcrUseCase
 from app.modules.ocr.infra.db.repository import PostgresOCRDocumentRepository
 
-router = APIRouter()
+router = APIRouter(tags=["OCR"])
 
 
 @router.post(

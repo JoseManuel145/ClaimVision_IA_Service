@@ -21,7 +21,7 @@ from app.modules.nosupervised.infra.ml.encoder_service import TorchEncoderServic
 from app.modules.nosupervised.infra.ml.clustering_service import SklearnClusteringService
 from app.modules.nosupervised.infra.mapping.cluster_mapper import JsonClusterMapper
 
-router = APIRouter()
+router = APIRouter(tags=["No Supervised"])
 
 
 @router.post(

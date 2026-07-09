@@ -16,7 +16,7 @@ from app.modules.nlp.application.transcribir_use_case import TranscribirUseCase
 from app.modules.nlp.application.history_use_case import HistoryUseCase
 from app.modules.nlp.infra.llm.ollama_extractor import OllamaExtractor
 
-router = APIRouter()
+router = APIRouter(tags=["NLP"])
 
 
 def _build_transcripcion_response(t) -> TranscribirResponse:
