@@ -1,0 +1,1703 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ClaimVision IA Service",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/predict": {
+      "post": {
+        "tags": [
+          "No Supervised"
+        ],
+        "summary": "Predecir tipo de daño vehicular",
+        "description": "Recibe una imagen de daño vehicular, la procesa a través del encoder y K-Means, y devuelve el tipo de daño, severidad y confianza.",
+        "operationId": "predict_api_v1_predict_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predict_api_v1_predict_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history": {
+      "get": {
+        "tags": [
+          "No Supervised"
+        ],
+        "summary": "Consultar historial de inferencias",
+        "description": "Devuelve una lista paginada de todas las inferencias realizadas.",
+        "operationId": "history_api_v1_history_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número de página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número de página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/retrain": {
+      "post": {
+        "tags": [
+          "No Supervised"
+        ],
+        "summary": "Re-entrenar K-Means",
+        "description": "[Admin] Recibe un conjunto de imágenes y re-entrena el modelo K-Means. Requiere al menos K imágenes.",
+        "operationId": "retrain_api_v1_retrain_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_retrain_api_v1_retrain_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "No Supervised"
+        ],
+        "summary": "Verificar estado del servicio",
+        "description": "Indica si los modelos están cargados correctamente.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ocr": {
+      "post": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Extraer texto de un PDF",
+        "description": "Recibe un PDF, extrae el texto con PyMuPDF + fallback OCR con Tesseract, y almacena el resultado.",
+        "operationId": "ocr_api_v1_ocr_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_api_v1_ocr_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ocr/history": {
+      "get": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Historial de documentos OCR",
+        "description": "Devuelve una lista paginada de todos los documentos procesados por OCR.",
+        "operationId": "ocr_history_api_v1_ocr_history_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número de página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número de página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/predict": {
+      "post": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Clasificar daño vehicular",
+        "description": "Usa modelo supervisado (ResNet18) para clasificar el daño en 7 clases incluyendo Sin Daño.",
+        "operationId": "predict_v2_api_v2_predict_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predict_v2_api_v2_predict_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2PredictResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/retrain": {
+      "post": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Re-entrenar modelo supervisado",
+        "description": "Inicia entrenamiento async del clasificador. Enviar labels como JSON + imágenes.",
+        "operationId": "retrain_v2_api_v2_retrain_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_retrain_v2_api_v2_retrain_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2RetrainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/retrain/{job_id}": {
+      "get": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Estado del re-entreno",
+        "description": "Consulta el progreso del entrenamiento asíncrono.",
+        "operationId": "retrain_status_api_v2_retrain__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2RetrainStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/history": {
+      "get": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Historial de inferencias",
+        "description": "Devuelve lista paginada de todas las clasificaciones realizadas.",
+        "operationId": "history_v2_api_v2_history_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número de página",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número de página"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2HistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/health": {
+      "get": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Health check",
+        "description": "Estado del clasificador supervisado.",
+        "operationId": "health_v2_api_v2_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nlp/transcribir": {
+      "post": {
+        "tags": [
+          "NLP"
+        ],
+        "summary": "Transcribir audio y extraer danos (asincrono)",
+        "description": "Recibe un archivo de audio, crea un job y procesa en segundo plano. Consultar estado con GET /nlp/transcribir/status/{job_id}.",
+        "operationId": "transcribir_api_v1_nlp_transcribir_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_transcribir_api_v1_nlp_transcribir_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscribirJobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nlp/transcribir/status/{job_id}": {
+      "get": {
+        "tags": [
+          "NLP"
+        ],
+        "summary": "Estado de transcripcion asincrona",
+        "description": "Devuelve el progreso del job. Si ya completo, incluye el resultado.",
+        "operationId": "transcribir_status_api_v1_nlp_transcribir_status__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscribirJobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nlp/analizar": {
+      "post": {
+        "tags": [
+          "NLP"
+        ],
+        "summary": "Analizar texto directamente",
+        "description": "Envia texto descriptivo de danos y recibe las entidades extraidas por el LLM.",
+        "operationId": "analizar_api_v1_nlp_analizar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalizarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalizarResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nlp/history": {
+      "get": {
+        "tags": [
+          "NLP"
+        ],
+        "summary": "Historial de transcripciones",
+        "description": "Devuelve una lista paginada de todas las transcripciones con sus entidades.",
+        "operationId": "nlp_history_api_v1_nlp_history_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Numero de pagina",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Numero de pagina"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por pagina",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por pagina"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NlpHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nlp/{id}": {
+      "get": {
+        "tags": [
+          "NLP"
+        ],
+        "summary": "Detalle de una transcripcion",
+        "description": "Obtiene una transcripcion y sus entidades por ID.",
+        "operationId": "nlp_detail_api_v1_nlp__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscribirResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalizarRequest": {
+        "properties": {
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "texto"
+        ],
+        "title": "AnalizarRequest"
+      },
+      "AnalizarResponse": {
+        "properties": {
+          "entidades": {
+            "items": {
+              "$ref": "#/components/schemas/DamageEntityResponse"
+            },
+            "type": "array",
+            "title": "Entidades"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entidades"
+        ],
+        "title": "AnalizarResponse"
+      },
+      "Body_ocr_api_v1_ocr_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Documento PDF"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_api_v1_ocr_post"
+      },
+      "Body_predict_api_v1_predict_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Imagen del daño vehicular (JPG/PNG)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_predict_api_v1_predict_post"
+      },
+      "Body_predict_v2_api_v2_predict_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Imagen del vehículo (JPG/PNG)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_predict_v2_api_v2_predict_post"
+      },
+      "Body_retrain_api_v1_retrain_post": {
+        "properties": {
+          "k": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 2.0,
+            "title": "K",
+            "description": "Número de clústeres"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "Imágenes para re-entrenamiento (mínimo K)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "k",
+          "files"
+        ],
+        "title": "Body_retrain_api_v1_retrain_post"
+      },
+      "Body_retrain_v2_api_v2_retrain_post": {
+        "properties": {
+          "labels": {
+            "type": "string",
+            "title": "Labels",
+            "description": "JSON: [{\"filename\":\"x.jpg\",\"label\":3}, ...]"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "Imágenes del dataset"
+          },
+          "epochs": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Epochs",
+            "description": "Cantidad de épocas",
+            "default": 40
+          },
+          "lr": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Lr",
+            "description": "Learning rate",
+            "default": 0.001
+          }
+        },
+        "type": "object",
+        "required": [
+          "labels",
+          "files"
+        ],
+        "title": "Body_retrain_v2_api_v2_retrain_post"
+      },
+      "Body_transcribir_api_v1_nlp_transcribir_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Archivo de audio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_transcribir_api_v1_nlp_transcribir_post"
+      },
+      "DamageEntityResponse": {
+        "properties": {
+          "tipo_dano": {
+            "type": "string",
+            "title": "Tipo Dano"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "parte_afectada": {
+            "type": "string",
+            "title": "Parte Afectada"
+          },
+          "sintoma": {
+            "type": "string",
+            "title": "Sintoma"
+          },
+          "confianza": {
+            "type": "number",
+            "title": "Confianza"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_dano",
+          "severidad",
+          "parte_afectada",
+          "sintoma",
+          "confianza"
+        ],
+        "title": "DamageEntityResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_loaded": {
+            "type": "boolean",
+            "title": "Model Loaded"
+          },
+          "k_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "K Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "model_loaded"
+        ],
+        "title": "HealthResponse"
+      },
+      "HistoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "cluster_id": {
+            "type": "integer",
+            "title": "Cluster Id"
+          },
+          "tipo_dano": {
+            "type": "string",
+            "title": "Tipo Dano"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "confianza": {
+            "type": "number",
+            "title": "Confianza"
+          },
+          "distancia_centroide": {
+            "type": "number",
+            "title": "Distancia Centroide"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "cluster_id",
+          "tipo_dano",
+          "severidad",
+          "confianza",
+          "distancia_centroide",
+          "created_at"
+        ],
+        "title": "HistoryItem"
+      },
+      "HistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
+        ],
+        "title": "HistoryResponse"
+      },
+      "NlpHistoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "duracion_seg": {
+            "type": "number",
+            "title": "Duracion Seg"
+          },
+          "entidades": {
+            "items": {
+              "$ref": "#/components/schemas/DamageEntityResponse"
+            },
+            "type": "array",
+            "title": "Entidades"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "texto",
+          "duracion_seg",
+          "entidades",
+          "created_at"
+        ],
+        "title": "NlpHistoryItem"
+      },
+      "NlpHistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NlpHistoryItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
+        ],
+        "title": "NlpHistoryResponse"
+      },
+      "OcrHistoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "page_count",
+          "created_at"
+        ],
+        "title": "OcrHistoryItem"
+      },
+      "OcrHistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OcrHistoryItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
+        ],
+        "title": "OcrHistoryResponse"
+      },
+      "OcrResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "text",
+          "page_count",
+          "created_at"
+        ],
+        "title": "OcrResponse"
+      },
+      "PredictResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "tipo_dano": {
+            "type": "string",
+            "title": "Tipo Dano"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "confianza": {
+            "type": "number",
+            "title": "Confianza"
+          },
+          "distancia_centroide": {
+            "type": "number",
+            "title": "Distancia Centroide"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "tipo_dano",
+          "severidad",
+          "confianza",
+          "distancia_centroide",
+          "created_at"
+        ],
+        "title": "PredictResponse"
+      },
+      "RetrainResponse": {
+        "properties": {
+          "k": {
+            "type": "integer",
+            "title": "K"
+          },
+          "silhouette": {
+            "type": "number",
+            "title": "Silhouette"
+          },
+          "davies_bouldin": {
+            "type": "number",
+            "title": "Davies Bouldin"
+          },
+          "inertia": {
+            "type": "number",
+            "title": "Inertia"
+          },
+          "mapping": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Mapping"
+          },
+          "trained_at": {
+            "type": "string",
+            "title": "Trained At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "k",
+          "silhouette",
+          "davies_bouldin",
+          "inertia",
+          "mapping",
+          "trained_at"
+        ],
+        "title": "RetrainResponse"
+      },
+      "TranscribirJobResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "progress"
+        ],
+        "title": "TranscribirJobResponse"
+      },
+      "TranscribirJobStatusResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TranscribirResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "progress"
+        ],
+        "title": "TranscribirJobStatusResponse"
+      },
+      "TranscribirResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "duracion_seg": {
+            "type": "number",
+            "title": "Duracion Seg"
+          },
+          "entidades": {
+            "items": {
+              "$ref": "#/components/schemas/DamageEntityResponse"
+            },
+            "type": "array",
+            "title": "Entidades"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "texto",
+          "duracion_seg",
+          "entidades",
+          "created_at"
+        ],
+        "title": "TranscribirResponse"
+      },
+      "V2HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_loaded": {
+            "type": "boolean",
+            "title": "Model Loaded"
+          },
+          "device": {
+            "type": "string",
+            "title": "Device"
+          },
+          "num_classes": {
+            "type": "integer",
+            "title": "Num Classes"
+          },
+          "class_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Class Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "model_loaded",
+          "device",
+          "num_classes",
+          "class_names"
+        ],
+        "title": "V2HealthResponse"
+      },
+      "V2HistoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "tipo_dano": {
+            "type": "string",
+            "title": "Tipo Dano"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "confianza": {
+            "type": "number",
+            "title": "Confianza"
+          },
+          "prob_dist": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Prob Dist"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "class_id",
+          "tipo_dano",
+          "severidad",
+          "confianza",
+          "prob_dist",
+          "created_at"
+        ],
+        "title": "V2HistoryItem"
+      },
+      "V2HistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/V2HistoryItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
+        ],
+        "title": "V2HistoryResponse"
+      },
+      "V2PredictResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "tipo_dano": {
+            "type": "string",
+            "title": "Tipo Dano"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "confianza": {
+            "type": "number",
+            "title": "Confianza"
+          },
+          "prob_dist": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Prob Dist"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "class_id",
+          "tipo_dano",
+          "severidad",
+          "confianza",
+          "prob_dist",
+          "created_at"
+        ],
+        "title": "V2PredictResponse"
+      },
+      "V2RetrainResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "V2RetrainResponse"
+      },
+      "V2RetrainStatusResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_epochs": {
+            "type": "integer",
+            "title": "Total Epochs"
+          },
+          "current_epoch": {
+            "type": "integer",
+            "title": "Current Epoch"
+          },
+          "best_accuracy": {
+            "type": "number",
+            "title": "Best Accuracy"
+          },
+          "loss_history": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Loss History"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "total_epochs",
+          "current_epoch",
+          "best_accuracy",
+          "loss_history",
+          "created_at"
+        ],
+        "title": "V2RetrainStatusResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
