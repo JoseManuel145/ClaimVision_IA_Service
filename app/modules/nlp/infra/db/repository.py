@@ -20,6 +20,7 @@ class PostgresVozRepository:
             created_at=transcripcion.created_at,
         )
         self._session.add(row)
+        await self._session.flush()
         for ent in transcripcion.entidades:
             ent_row = NlpDamageEntityTable(
                 id=str(uuid.uuid4()),

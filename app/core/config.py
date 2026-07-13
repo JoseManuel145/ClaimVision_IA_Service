@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ORIGINS: list[str] = ["*"]
     MAX_IMAGE_SIZE_MB: int = 10
     OLLAMA_URL: str = "http://ollama:11434"
-    OLLAMA_MODEL: str = "qwen2.5-coder:1.5b"
+    OLLAMA_MODEL: str = "qwen2.5:3b"
 
     class Config:
         env_file = ".env"

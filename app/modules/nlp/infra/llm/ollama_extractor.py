@@ -54,12 +54,26 @@ Si no hay danos detectables, responde: []"""
             raw = data.get("response", "[]")
 
         try:
-            items = json.loads(raw)
+            parsed = json.loads(raw)
         except json.JSONDecodeError:
             return []
 
+        if isinstance(parsed, list):
+            pass
+        elif isinstance(parsed, dict):
+            for v in parsed.values():
+                if isinstance(v, list):
+                    parsed = v
+                    break
+            else:
+                parsed = [parsed]
+        else:
+            return []
+
         entidades = []
-        for item in items:
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
             entidades.append(
                 DamageEntity(
                     tipo_dano=item.get("tipo_dano", ""),

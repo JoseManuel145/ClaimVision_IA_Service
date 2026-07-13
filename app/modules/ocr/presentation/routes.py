@@ -112,8 +112,8 @@ async def extract_poliza(
         vehiculo_placas=data.get("vehiculo_placas", ""),
         vehiculo_vin=data.get("vehiculo_vin"),
         vehiculo_color=data.get("vehiculo_color"),
-        vigencia_inicio=data.get("vigencia_inicio", ""),
-        vigencia_fin=data.get("vigencia_fin", ""),
+        vigencia_inicio=data.get("vigencia_inicio") or "",
+        vigencia_fin=data.get("vigencia_fin") or "",
     )
 
 

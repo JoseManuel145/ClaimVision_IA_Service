@@ -25,17 +25,21 @@ class WhisperSTTService:
             tmp_in.write(audio_bytes)
             tmp_in_path = tmp_in.name
 
-        tmp_wav_path = tmp_in_path.rsplit(".", 1)[0] + ".wav"
+        if suffix == ".wav":
+            tmp_wav_path = tmp_in_path
+        else:
+            tmp_wav_path = tmp_in_path.rsplit(".", 1)[0] + ".wav"
         try:
-            subprocess.run(
-                [
-                    "ffmpeg", "-y", "-i", tmp_in_path,
-                    "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
-                    tmp_wav_path,
-                ],
-                capture_output=True,
-                check=True,
-            )
+            if suffix != ".wav":
+                subprocess.run(
+                    [
+                        "ffmpeg", "-y", "-i", tmp_in_path,
+                        "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                        tmp_wav_path,
+                    ],
+                    capture_output=True,
+                    check=True,
+                )
             segments, info = model.transcribe(tmp_wav_path, language="es")
             texto = " ".join(segment.text for segment in segments)
             duracion = round(info.duration, 2) if info.duration else 0.0
