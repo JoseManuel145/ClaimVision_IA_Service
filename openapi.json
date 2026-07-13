@@ -275,6 +275,132 @@
         }
       }
     },
+    "/api/v1/ocr/extract-poliza": {
+      "post": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Extraer datos estructurados de una poliza de seguro",
+        "description": "Recibe un PDF de poliza, extrae texto con OCR y estructura los campos con LLM.",
+        "operationId": "extract_poliza_api_v1_ocr_extract_poliza_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_extract_poliza_api_v1_ocr_extract_poliza_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolizaExtractedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ocr/extract-ine": {
+      "post": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Extraer datos estructurados de una credencial INE",
+        "description": "Recibe una imagen o PDF de credencial INE, extrae texto con OCR y estructura los campos con LLM.",
+        "operationId": "extract_ine_api_v1_ocr_extract_ine_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_extract_ine_api_v1_ocr_extract_ine_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IneExtractedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ocr/extract-and-validate": {
+      "post": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Extraer y validar poliza contra INE",
+        "description": "Recibe una poliza PDF y una credencial INE (imagen/PDF), extrae ambas y valida cruzadamente.",
+        "operationId": "extract_and_validate_api_v1_ocr_extract_and_validate_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_extract_and_validate_api_v1_ocr_extract_and_validate_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractAndValidateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/predict": {
       "post": {
         "tags": [
@@ -767,6 +893,58 @@
         ],
         "title": "AnalizarResponse"
       },
+      "Body_extract_and_validate_api_v1_ocr_extract_and_validate_post": {
+        "properties": {
+          "poliza": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Poliza",
+            "description": "PDF de la poliza de seguro"
+          },
+          "ine": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Ine",
+            "description": "Imagen o PDF de la credencial INE"
+          }
+        },
+        "type": "object",
+        "required": [
+          "poliza",
+          "ine"
+        ],
+        "title": "Body_extract_and_validate_api_v1_ocr_extract_and_validate_post"
+      },
+      "Body_extract_ine_api_v1_ocr_extract_ine_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Imagen o PDF de la credencial INE"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_extract_ine_api_v1_ocr_extract_ine_post"
+      },
+      "Body_extract_poliza_api_v1_ocr_extract_poliza_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "PDF de la poliza de seguro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_extract_poliza_api_v1_ocr_extract_poliza_post"
+      },
       "Body_ocr_api_v1_ocr_post": {
         "properties": {
           "file": {
@@ -925,6 +1103,26 @@
         ],
         "title": "DamageEntityResponse"
       },
+      "ExtractAndValidateResponse": {
+        "properties": {
+          "poliza": {
+            "$ref": "#/components/schemas/PolizaExtractedResponse"
+          },
+          "ine": {
+            "$ref": "#/components/schemas/IneExtractedResponse"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "poliza",
+          "ine",
+          "validation"
+        ],
+        "title": "ExtractAndValidateResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1045,6 +1243,65 @@
           "limit"
         ],
         "title": "HistoryResponse"
+      },
+      "IneExtractedResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "title": "Nombre Completo"
+          },
+          "curp": {
+            "type": "string",
+            "title": "Curp"
+          },
+          "rfc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rfc"
+          },
+          "fecha_nacimiento": {
+            "type": "string",
+            "title": "Fecha Nacimiento"
+          },
+          "sexo": {
+            "type": "string",
+            "title": "Sexo"
+          },
+          "domicilio": {
+            "type": "string",
+            "title": "Domicilio"
+          },
+          "clave_elector": {
+            "type": "string",
+            "title": "Clave Elector"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "nombre_completo",
+          "curp",
+          "fecha_nacimiento",
+          "sexo",
+          "domicilio",
+          "clave_elector"
+        ],
+        "title": "IneExtractedResponse"
       },
       "NlpHistoryItem": {
         "properties": {
@@ -1209,6 +1466,91 @@
           "created_at"
         ],
         "title": "OcrResponse"
+      },
+      "PolizaExtractedResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "numero_poliza": {
+            "type": "string",
+            "title": "Numero Poliza"
+          },
+          "aseguradora": {
+            "type": "string",
+            "title": "Aseguradora"
+          },
+          "nombre_asegurado": {
+            "type": "string",
+            "title": "Nombre Asegurado"
+          },
+          "vehiculo_marca": {
+            "type": "string",
+            "title": "Vehiculo Marca"
+          },
+          "vehiculo_modelo": {
+            "type": "string",
+            "title": "Vehiculo Modelo"
+          },
+          "vehiculo_anio": {
+            "type": "integer",
+            "title": "Vehiculo Anio"
+          },
+          "vehiculo_placas": {
+            "type": "string",
+            "title": "Vehiculo Placas"
+          },
+          "vehiculo_vin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehiculo Vin"
+          },
+          "vehiculo_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehiculo Color"
+          },
+          "vigencia_inicio": {
+            "type": "string",
+            "title": "Vigencia Inicio"
+          },
+          "vigencia_fin": {
+            "type": "string",
+            "title": "Vigencia Fin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "numero_poliza",
+          "aseguradora",
+          "nombre_asegurado",
+          "vehiculo_marca",
+          "vehiculo_modelo",
+          "vehiculo_anio",
+          "vehiculo_placas",
+          "vigencia_inicio",
+          "vigencia_fin"
+        ],
+        "title": "PolizaExtractedResponse"
       },
       "PredictResponse": {
         "properties": {
@@ -1697,6 +2039,32 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValidationResult": {
+        "properties": {
+          "poliza_vs_ine_nombre_match": {
+            "type": "boolean",
+            "title": "Poliza Vs Ine Nombre Match"
+          },
+          "curp_rfc_consistent": {
+            "type": "boolean",
+            "title": "Curp Rfc Consistent"
+          },
+          "detalles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detalles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "poliza_vs_ine_nombre_match",
+          "curp_rfc_consistent",
+          "detalles"
+        ],
+        "title": "ValidationResult"
       }
     }
   }
