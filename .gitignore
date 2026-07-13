@@ -12,3 +12,4 @@ venv/
 .DS_Store
 migrations/
 generate_openapi.py
+/graphify-out/cache
