@@ -59,6 +59,21 @@ class OllamaDocumentExtractor:
         self.base_url = base_url.rstrip("/")
         self.model = model
 
+    async def _call_ollama(self, prompt: str) -> str:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                f"{self.base_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "format": "json",
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("response", "{}")
+
     async def extract_poliza(self, text: str) -> PolizaData:
         prompt = POLIZA_PROMPT.format(text=text)
         raw = await self._call_ollama(prompt)
@@ -110,18 +125,3 @@ class OllamaDocumentExtractor:
             clave_elector=data.get("clave_elector", ""),
             numero_credencial=data.get("numero_credencial"),
         )
-
-    async def _call_ollama(self, prompt: str) -> str:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                f"{self.base_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json",
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data.get("response", "{}")
