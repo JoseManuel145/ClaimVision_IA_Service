@@ -13,3 +13,4 @@ venv/
 migrations/
 generate_openapi.py
 /graphify-out/cache
+demos/

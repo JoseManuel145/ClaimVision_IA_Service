@@ -1,4 +1,5 @@
 import json
+import re
 import httpx
 from app.modules.ocr.domain.models import PolizaData, IneData
 
@@ -28,26 +29,25 @@ Si un campo no se encuentra en el texto, usa una cadena vacia "" para strings o 
 Si el texto no parece una poliza de seguro, responde con un JSON con todos los campos vacios/null."""
 
 
-INE_PROMPT = """Dado el siguiente texto extraido de una credencial del INE (Instituto Nacional Electoral) de Mexico, extrae los campos solicitados. Responde SOLO con un JSON.
+INE_PROMPT = """Extrae el nombre completo, domicilio, RFC y numero de credencial del texto de una credencial INE. Responde SOLO con un JSON.
 
 Texto:
 \"\"\"
 {text}
 \"\"\"
 
-Campos a extraer (responde con un JSON object con exactamente estas llaves):
-- nombre_completo: string (nombre completo como aparece en la credencial)
-- curp: string (CURP de 18 caracteres)
+El nombre completo aparece despues de la etiqueta "NOMBRE" y puede estar en varias lineas con apellido paterno, apellido materno y nombre(s).
+El domicilio aparece despues de "DOMICILIO" con calle, colonia, CP, ciudad y estado.
+El RFC es un codigo alfanumerico de 10-13 caracteres cerca de la CURP.
+El numero de credencial puede aparecer en la parte inferior de la credencial.
+
+Campos:
+- nombre_completo: string (apellido paterno, apellido materno, nombre(s))
+- domicilio: string (domicilio completo con calle, colonia, CP, ciudad, estado)
 - rfc: string o null (RFC si aparece)
-- fecha_nacimiento: string (fecha de nacimiento en formato YYYY-MM-DD)
-- sexo: string ("H" o "M")
-- domicilio: string (domicilio completo como aparece)
-- clave_elector: string (clave de elector de 18 caracteres)
 - numero_credencial: string o null (numero de credencial si aparece)
 
-Si un campo no se encuentra en el texto, usa una cadena vacia "" para strings o null para opcionales.
-Si el texto no parece una credencial INE, responde con un JSON con todos los campos vacios/null.
-"""
+Si un campo no se encuentra, usa "" para strings o null para opcionales."""
 
 
 class OllamaDocumentExtractor:
@@ -103,25 +103,83 @@ class OllamaDocumentExtractor:
         )
 
     async def extract_ine(self, text: str) -> IneData:
+        curp_from_ocr = self._extract_curp_from_text(text)
+        sexo_from_ocr = self._extract_sexo_from_text(text)
+        if not sexo_from_ocr and curp_from_ocr:
+            sexo_from_ocr = self._infer_sexo_from_curp(curp_from_ocr)
+        clave_elector_from_ocr = self._extract_clave_elector_from_text(text)
+
         prompt = INE_PROMPT.format(text=text)
         raw = await self._call_ollama(prompt)
 
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
-            return IneData(
-                nombre_completo="", curp="", rfc=None,
-                fecha_nacimiento="", sexo="", domicilio="",
-                clave_elector="", numero_credencial=None,
-            )
+            data = {}
+
+        curp = curp_from_ocr or self._clean_curp(data.get("curp", ""))
 
         return IneData(
             nombre_completo=data.get("nombre_completo", ""),
-            curp=data.get("curp", ""),
+            curp=curp,
             rfc=data.get("rfc"),
-            fecha_nacimiento=data.get("fecha_nacimiento", ""),
-            sexo=data.get("sexo", ""),
+            fecha_nacimiento=self._extract_fecha_from_curp(curp),
+            sexo=sexo_from_ocr,
             domicilio=data.get("domicilio", ""),
-            clave_elector=data.get("clave_elector", ""),
+            clave_elector=clave_elector_from_ocr or data.get("clave_elector", ""),
             numero_credencial=data.get("numero_credencial"),
         )
+
+    def _extract_curp_from_text(self, text: str) -> str:
+        match = re.search(
+            r"[A-Z]{4}\d{6}[HM][A-Z]{2}[A-Z]{3}[A-Z0-9]{2}",
+            text.upper(),
+        )
+        if match:
+            return self._clean_curp(match.group(0))
+        return ""
+
+    def _extract_sexo_from_text(self, text: str) -> str:
+        match = re.search(r"SEXO\s*[:\-]?\s*(H|M)", text, re.IGNORECASE)
+        if match:
+            return match.group(1).upper()
+        return ""
+
+    def _extract_clave_elector_from_text(self, text: str) -> str:
+        match = re.search(r"CLAVE\s*(?:DE\s*)?ELECTOR\s*[:\-]?\s*([A-Z0-9]{18})", text.upper())
+        if match:
+            return match.group(1)
+        return ""
+
+    def _extract_fecha_from_curp(self, curp: str) -> str:
+        if len(curp) >= 10:
+            yy = int(curp[4:6])
+            mm = curp[6:8]
+            dd = curp[8:10]
+            century = "19" if yy > 50 else "20"
+            return f"{century}{yy:02d}-{mm}-{dd}"
+        return ""
+
+    def _infer_sexo_from_curp(self, curp: str) -> str:
+        if len(curp) >= 11:
+            c = curp[10].upper()
+            if c in ("H", "M", "X"):
+                return c
+        return ""
+
+    def _clean_curp(self, curp: str) -> str:
+        if not curp:
+            return ""
+        curp = curp.upper().strip()
+        if len(curp) >= 18:
+            fixed = list(curp)
+            for i in range(4, 10):
+                fixed[i] = self._fix_digit(fixed[i])
+            fixed[16] = self._fix_digit(fixed[16])
+            fixed[17] = self._fix_digit(fixed[17])
+            curp = "".join(fixed)
+        return curp
+
+    def _fix_digit(self, ch: str) -> str:
+        mapping = {"O": "0", "I": "1", "S": "5", "Z": "2", "G": "6", "B": "8", "L": "1"}
+        return mapping.get(ch.upper(), ch)

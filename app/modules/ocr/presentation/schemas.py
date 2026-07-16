@@ -46,10 +46,10 @@ class IneExtractedResponse(BaseModel):
     nombre_completo: str
     curp: str
     rfc: Optional[str] = None
-    fecha_nacimiento: str
-    sexo: str
-    domicilio: str
-    clave_elector: str
+    fecha_nacimiento: Optional[str] = None
+    sexo: Optional[str] = None
+    domicilio: Optional[str] = None
+    clave_elector: Optional[str] = None
 
 
 class ValidationResult(BaseModel):
