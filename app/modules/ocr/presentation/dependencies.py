@@ -6,6 +6,7 @@ from app.modules.ocr.infra.db.repository import PostgresOCRDocumentRepository
 from app.modules.ocr.infra.ocr.pymupdf_ocr_service import PyMuPDFOCRService
 from app.modules.ocr.infra.ocr.tesseract_image_service import TesseractImageOCRService
 from app.modules.ocr.infra.llm.ollama_document_extractor import OllamaDocumentExtractor
+from app.modules.ocr.infra.validation.image_validator import ImageValidator
 from app.modules.ocr.application.ocr_use_case import OcrUseCase
 from app.modules.ocr.application.extract_poliza_use_case import ExtractPolizaUseCase
 from app.modules.ocr.application.extract_ine_use_case import ExtractIneUseCase
@@ -26,6 +27,10 @@ def get_image_ocr_service() -> TesseractImageOCRService:
 
 def get_document_extractor() -> OllamaDocumentExtractor:
     return OllamaDocumentExtractor(settings.OLLAMA_URL, settings.OLLAMA_MODEL)
+
+
+def get_image_validator() -> ImageValidator:
+    return ImageValidator()
 
 
 def get_ocr_use_case(

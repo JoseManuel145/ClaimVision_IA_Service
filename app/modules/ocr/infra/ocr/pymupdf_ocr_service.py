@@ -1,3 +1,4 @@
+import re
 import io
 from PIL import Image, ImageEnhance, ImageFilter
 import fitz
@@ -6,6 +7,7 @@ import pytesseract
 
 class PyMuPDFOCRService:
     MIN_TEXT_LENGTH = 20
+    _MRZ_PATTERN = re.compile(r"[A-Z]{3,}<[A-Z]{3,}<<[A-Z]{3,}")
 
     async def extract(self, pdf_bytes: bytes) -> str:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -53,6 +55,10 @@ class PyMuPDFOCRService:
     def _ocr_best_method(self, img: Image.Image) -> str:
         text_simple = self._ocr_simple(img)
         text_enhanced = self._ocr_enhanced(img)
+        simple_has_mrz = bool(self._MRZ_PATTERN.search(text_simple.upper()))
+        enhanced_has_mrz = bool(self._MRZ_PATTERN.search(text_enhanced.upper()))
+        if simple_has_mrz and not enhanced_has_mrz:
+            return text_simple
         if len(text_enhanced) > len(text_simple) * 1.2:
             return text_enhanced
         return text_simple

@@ -3,12 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.logging import setup_logging
 from app.core.config import settings
 from app.core.database import init_db
 from app.modules.nosupervised.presentation.routes import router as nonsupervised
 from app.modules.ocr.presentation.routes import router as ocr_router
 from app.modules.supervised.presentation.routes import router as supervised
 from app.modules.nlp.presentation.routes import router as nlp_router
+
+setup_logging()
 
 
 @asynccontextmanager

@@ -12,6 +12,8 @@ from app.modules.ocr.domain.ports import (
 
 
 class ExtractIneUseCase:
+    MIN_OCR_TEXT_LENGTH = 50
+
     def __init__(
         self,
         ocr: OCRService,
@@ -31,6 +33,9 @@ class ExtractIneUseCase:
             raw_text = await self._image_ocr.extract_from_image(file_bytes, filename)
         else:
             raw_text = await self._ocr.extract(file_bytes)
+
+        if len(raw_text.strip()) < self.MIN_OCR_TEXT_LENGTH:
+            raw_text = f"[OCR insuficiente: solo {len(raw_text.strip())} caracteres extraidos]"
 
         ine = await self._extractor.extract_ine(raw_text)
 

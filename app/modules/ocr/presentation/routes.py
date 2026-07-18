@@ -14,12 +14,14 @@ from app.modules.ocr.presentation.dependencies import (
     get_extract_poliza_use_case,
     get_extract_ine_use_case,
     get_extract_and_validate_use_case,
+    get_image_validator,
 )
 from app.modules.ocr.application.ocr_use_case import OcrUseCase
 from app.modules.ocr.application.extract_poliza_use_case import ExtractPolizaUseCase
 from app.modules.ocr.application.extract_ine_use_case import ExtractIneUseCase
 from app.modules.ocr.application.extract_and_validate_use_case import ExtractAndValidateUseCase
 from app.modules.ocr.infra.db.repository import PostgresOCRDocumentRepository
+from app.modules.ocr.infra.validation.image_validator import ImageValidator
 
 router = APIRouter(tags=["OCR"])
 
@@ -126,6 +128,7 @@ async def extract_poliza(
 async def extract_ine(
     file: UploadFile = File(..., description="Imagen o PDF de la credencial INE"),
     use_case: ExtractIneUseCase = Depends(get_extract_ine_use_case),
+    validator: ImageValidator = Depends(get_image_validator),
 ):
     allowed_types = {"image/jpeg", "image/png", "image/jpg", "application/pdf"}
     if file.content_type and file.content_type not in allowed_types:
@@ -138,6 +141,17 @@ async def extract_ine(
         raise HTTPException(status_code=400, detail="El archivo esta vacio")
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="El archivo excede 10MB")
+
+    validation_result = await validator.validate_ine_image(contents, file.content_type or "")
+    if not validation_result.is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "La imagen de la INE no cumple con los estandares de calidad",
+                "details": validation_result.errors,
+                "suggestion": "Capture la INE con buena iluminacion, sin movimiento y en posicion horizontal",
+            },
+        )
 
     result = await use_case.execute(
         contents, file.filename or "unknown", file.content_type or ""
@@ -166,6 +180,7 @@ async def extract_and_validate(
     poliza: UploadFile = File(..., description="PDF de la poliza de seguro"),
     ine: UploadFile = File(..., description="Imagen o PDF de la credencial INE"),
     use_case: ExtractAndValidateUseCase = Depends(get_extract_and_validate_use_case),
+    validator: ImageValidator = Depends(get_image_validator),
 ):
     poliza_bytes = await poliza.read()
     if len(poliza_bytes) == 0:
@@ -175,11 +190,33 @@ async def extract_and_validate(
     if poliza.content_type and poliza.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="La poliza debe ser un PDF")
 
+    poliza_validation = await validator.validate_poliza_pdf(poliza_bytes)
+    if not poliza_validation.is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "La imagen de la poliza no cumple con los estandares de calidad",
+                "details": poliza_validation.errors,
+                "suggestion": "Capture la poliza completa con buena iluminacion y bordes visibles",
+            },
+        )
+
     ine_bytes = await ine.read()
     if len(ine_bytes) == 0:
         raise HTTPException(status_code=400, detail="La INE esta vacia")
     if len(ine_bytes) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="La INE excede 10MB")
+
+    ine_validation = await validator.validate_ine_image(ine_bytes, ine.content_type or "")
+    if not ine_validation.is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "La imagen de la INE no cumple con los estandares de calidad",
+                "details": ine_validation.errors,
+                "suggestion": "Capture la INE con buena iluminacion, sin movimiento y en posicion horizontal",
+            },
+        )
 
     result = await use_case.execute(
         poliza_bytes,
