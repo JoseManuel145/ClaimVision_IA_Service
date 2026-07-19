@@ -12,3 +12,8 @@ services:
     volumes:
       - ./models:/app/models
     restart: unless-stopped
+
+networks:
+  default:
+    external: true
+    name: claimvision_net
