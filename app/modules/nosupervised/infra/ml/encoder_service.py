@@ -36,22 +36,31 @@ class Encoder(nn.Module):
 class TorchEncoderService(EncoderService):
     def __init__(self, models_dir: str):
         self._device = torch.device("cpu")
+        self._is_loaded = False
+        self._encoder = None
+        
         config_path = Path(models_dir) / "encoder_config.json"
         weights_path = Path(models_dir) / "encoder_best.pth"
 
-        with open(config_path) as f:
-            cfg = json.load(f)
+        try:
+            with open(config_path) as f:
+                cfg = json.load(f)
 
-        self._encoder = Encoder(
-            latent_dim=cfg["latent_dim"],
-            img_size=cfg["img_size"],
-        )
-        state = torch.load(str(weights_path), map_location=self._device, weights_only=True)
-        self._encoder.load_state_dict(state, strict=False)
-        self._encoder.eval()
-        self._encoder.to(self._device)
+            self._encoder = Encoder(
+                latent_dim=cfg["latent_dim"],
+                img_size=cfg["img_size"],
+            )
+            state = torch.load(str(weights_path), map_location=self._device, weights_only=True)
+            self._encoder.load_state_dict(state, strict=False)
+            self._encoder.eval()
+            self._encoder.to(self._device)
+            self._is_loaded = True
+        except Exception as e:
+            pass
 
     async def encode(self, tensor: torch.Tensor) -> list[float]:
+        if not self._is_loaded:
+            raise RuntimeError("Encoder no fue cargado correctamente")
         with torch.no_grad():
             vector = self._encoder.forward(tensor.to(self._device))
         return vector.squeeze(0).tolist()

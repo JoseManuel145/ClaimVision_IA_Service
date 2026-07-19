@@ -122,6 +122,9 @@ async def health(
     clustering: SklearnClusteringService = Depends(get_clustering),
     mapper: JsonClusterMapper = Depends(get_mapper),
 ):
+    if not encoder._is_loaded or not clustering._is_loaded:
+        raise HTTPException(status_code=500, detail="Modelo no supervisado roto o archivos faltantes")
+        
     return HealthResponse(
         status="ok",
         model_loaded=True,

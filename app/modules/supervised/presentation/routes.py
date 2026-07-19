@@ -139,10 +139,14 @@ async def history_v2(
 async def health_v2(
     classifier: ResNetClassifierService = Depends(get_classifier),
 ):
+    classes = classifier.get_class_names()
+    if len(classes) == 0:
+        raise HTTPException(status_code=500, detail="Modelo supervisado roto o sin clases")
+        
     return V2HealthResponse(
         status="ok",
         model_loaded=True,
         device=str(classifier._device),
-        num_classes=len(classifier.get_class_names()),
-        class_names=classifier.get_class_names(),
+        num_classes=len(classes),
+        class_names=classes,
     )

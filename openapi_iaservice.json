@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "ClaimVision IA Service",
-    "version": "1.0.0"
+    "version": "3.5.0"
   },
   "paths": {
     "/api/v1/predict": {
@@ -1274,19 +1274,47 @@
             "title": "Rfc"
           },
           "fecha_nacimiento": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Fecha Nacimiento"
           },
           "sexo": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Sexo"
           },
           "domicilio": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Domicilio"
           },
           "clave_elector": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Clave Elector"
           }
         },
@@ -1295,11 +1323,7 @@
           "id",
           "filename",
           "nombre_completo",
-          "curp",
-          "fecha_nacimiento",
-          "sexo",
-          "domicilio",
-          "clave_elector"
+          "curp"
         ],
         "title": "IneExtractedResponse"
       },

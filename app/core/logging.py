@@ -18,7 +18,7 @@ def setup_logging() -> None:
     app_logger.addHandler(handler)
     app_logger.propagate = False
 
-    log_dir = "/app/logs"
+    log_dir = os.environ.get("LOG_DIR", "logs")
     os.makedirs(log_dir, exist_ok=True)
     file_handler = RotatingFileHandler(
         os.path.join(log_dir, "ia_service.log"),

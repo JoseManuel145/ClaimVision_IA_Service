@@ -39,23 +39,23 @@ Catalogo de referencia (usar estos valores de tipo_dano cuando corresponda):
 
 Si no hay danos detectables, responde: []"""
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                f"{self.base_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json",
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            raw = data.get("response", "[]")
-
         try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(
+                    f"{self.base_url}/api/generate",
+                    json={
+                        "model": self.model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "format": "json",
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                raw = data.get("response", "[]")
+
             parsed = json.loads(raw)
-        except json.JSONDecodeError:
+        except (httpx.RequestError, httpx.HTTPStatusError, json.JSONDecodeError):
             return []
 
         if isinstance(parsed, list):

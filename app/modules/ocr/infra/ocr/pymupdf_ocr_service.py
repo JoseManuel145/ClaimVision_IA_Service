@@ -10,7 +10,10 @@ class PyMuPDFOCRService:
     _MRZ_PATTERN = re.compile(r"[A-Z]{3,}<[A-Z]{3,}<<[A-Z]{3,}")
 
     async def extract(self, pdf_bytes: bytes) -> str:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        try:
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        except Exception:
+            return ""
 
         # Pass 1: try direct text extraction
         text_parts = []

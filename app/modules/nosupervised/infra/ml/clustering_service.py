@@ -8,11 +8,19 @@ from app.modules.nosupervised.domain.ports import ClusteringService
 
 class SklearnClusteringService(ClusteringService):
     def __init__(self, models_dir: str):
+        self._is_loaded = False
+        self._kmeans = None
         model_path = Path(models_dir) / "kmeans.pkl"
-        with open(model_path, "rb") as f:
-            self._kmeans: KMeans = pickle.load(f)
+        try:
+            with open(model_path, "rb") as f:
+                self._kmeans = pickle.load(f)
+            self._is_loaded = True
+        except Exception:
+            pass
 
     async def predict(self, vector: list[float]) -> tuple[int, float]:
+        if not self._is_loaded:
+            raise RuntimeError("KMeans no fue cargado correctamente")
         dtype = self._kmeans.cluster_centers_.dtype
         arr = np.array([vector], dtype=dtype)
         cluster_id = int(self._kmeans.predict(arr)[0])
