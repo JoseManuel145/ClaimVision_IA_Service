@@ -2,7 +2,7 @@ services:
   api:
     build: .
     ports:
-      - "127.0.0.1:8001:8000"
+      - "8001:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://claimvision:claimvision_pass@db:5432/claimvision_ia
       - MODELS_DIR=/app/models
