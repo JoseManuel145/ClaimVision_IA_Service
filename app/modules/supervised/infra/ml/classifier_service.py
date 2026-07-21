@@ -1,13 +1,16 @@
 import json
 import os
+from collections import Counter
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import models, transforms
 from PIL import Image
+from sklearn.model_selection import StratifiedShuffleSplit
 
 
 class ImageFolderDataset(Dataset):
@@ -89,25 +92,54 @@ class ResNetClassifierService:
         train_transform = transforms.Compose([
             transforms.Resize(256),
             transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(10),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1),
+            transforms.RandomVerticalFlip(p=0.3),
+            transforms.RandomRotation(15),
+            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+            transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.05),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
+        val_transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+
         dataset = ImageFolderDataset(data_dir, train_transform)
         if len(dataset) == 0:
             raise ValueError("No se encontraron imágenes válidas en los datos enviados")
 
-        labels_set = set(s[1] for s in dataset.samples)
-        num_classes = max(labels_set) + 1
-        loader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=0)
+        all_labels = [s[1] for s in dataset.samples]
+        num_classes = max(all_labels) + 1
+
+        n_samples = len(dataset)
+        n_val = int(n_samples * 0.2)
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=n_val, random_state=42)
+        train_idx, val_idx = next(sss.split(np.zeros(n_samples), all_labels))
+
+        val_dataset_raw = ImageFolderDataset(data_dir, val_transform)
+        train_dataset = Subset(dataset, train_idx)
+        val_dataset = Subset(val_dataset_raw, val_idx)
+
+        loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=0)
+        val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=0)
+
+        train_labels = [all_labels[i] for i in train_idx]
+        train_label_counts = Counter(train_labels)
+        weight_tensor = torch.ones(num_classes, dtype=torch.float32)
+        total_train = len(train_labels)
+        for cls_id in range(num_classes):
+            if cls_id in train_label_counts and train_label_counts[cls_id] > 0:
+                weight_tensor[cls_id] = total_train / (num_classes * train_label_counts[cls_id])
+        weight_tensor = weight_tensor.to(device)
 
         model = _build_model(num_classes)
         model.train()
         model.to(device)
 
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss(weight=weight_tensor)
         optimizer = optim.Adam(model.parameters(), lr=lr)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)
 
@@ -115,6 +147,7 @@ class ResNetClassifierService:
         patience_counter = 0
 
         for epoch in range(epochs):
+            model.train()
             running_loss = 0.0
             correct = 0
             total = 0
@@ -136,17 +169,29 @@ class ResNetClassifierService:
             epoch_loss = running_loss / total
             epoch_acc = correct / total
 
+            model.eval()
+            val_correct = 0
+            val_total = 0
+            with torch.no_grad():
+                for inputs, labels in val_loader:
+                    inputs, labels = inputs.to(device), labels.to(device)
+                    outputs = model(inputs)
+                    _, predicted = torch.max(outputs, 1)
+                    val_total += labels.size(0)
+                    val_correct += (predicted == labels).sum().item()
+            val_acc = val_correct / val_total if val_total > 0 else 0.0
+
             scheduler.step(epoch_loss)
 
             is_best = False
-            if epoch_acc > best_acc:
-                best_acc = epoch_acc
+            if val_acc > best_acc:
+                best_acc = val_acc
                 patience_counter = 0
                 is_best = True
             else:
                 patience_counter += 1
 
-            on_epoch_end(job_id, epoch + 1, epoch_acc, epoch_loss, is_best)
+            on_epoch_end(job_id, epoch + 1, val_acc, epoch_loss, is_best)
 
             if is_best:
                 temp_path = str(self._model_path) + ".tmp"
