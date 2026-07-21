@@ -24,17 +24,14 @@ import csv
 import json
 import os
 import sys
-from collections import Counter
 from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 from PIL import Image
-from sklearn.model_selection import StratifiedShuffleSplit
 
 
 class MappedCSVDataset(Dataset):
@@ -93,10 +90,8 @@ def train(args):
     train_transform = transforms.Compose([
         transforms.Resize(256),
         transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(p=0.3),
-        transforms.RandomRotation(15),
-        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
-        transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.05),
+        transforms.RandomRotation(10),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -115,41 +110,24 @@ def train(args):
         sys.exit(1)
     print(f"Total de muestras: {len(full_dataset)}")
 
-    all_labels = [s[1] for s in full_dataset.samples]
-    labels_set = sorted(set(all_labels))
+    labels_set = sorted(set(s[1] for s in full_dataset.samples))
     print(f"Clases presentes: {labels_set}")
 
-    label_counts = Counter(all_labels)
-    for lbl in labels_set:
-        print(f"  Clase {lbl}: {label_counts[lbl]} muestras")
-
-    n_samples = len(full_dataset)
-    n_val = int(n_samples * 0.2)
-
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=n_val, random_state=42)
-    train_idx, val_idx = next(sss.split(np.zeros(n_samples), all_labels))
-
-    val_dataset_full = MappedCSVDataset(args.data_dir, args.labels, label_map, val_transform)
-    train_dataset = Subset(full_dataset, train_idx)
-    val_dataset = Subset(val_dataset_full, val_idx)
+    val_size = int(len(full_dataset) * 0.2)
+    train_size = len(full_dataset) - val_size
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        full_dataset, [train_size, val_size]
+    )
+    val_dataset.dataset.transform = val_transform
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
-
-    train_labels = [all_labels[i] for i in train_idx]
-    train_label_counts = Counter(train_labels)
-    weight_tensor = torch.ones(num_classes, dtype=torch.float32)
-    total_train = len(train_labels)
-    for cls_id in range(num_classes):
-        if cls_id in train_label_counts and train_label_counts[cls_id] > 0:
-            weight_tensor[cls_id] = total_train / (num_classes * train_label_counts[cls_id])
-    print(f"Pesos de clase: { {i: round(w.item(), 3) for i, w in enumerate(weight_tensor)} }")
 
     model = build_model(num_classes)
     model.train()
     model.to(device)
 
-    criterion = nn.CrossEntropyLoss(weight=weight_tensor.to(device))
+    criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)
 
