@@ -6,16 +6,23 @@ from app.modules.supervised.presentation.schemas import (
     V2RetrainStatusResponse,
     V2HealthResponse,
     V2HistoryResponse,
+    PredictAllResponse,
+    ResumenRequest,
+    ResumenResponse,
 )
 from app.modules.supervised.presentation.dependencies import (
     get_v2_predict_use_case,
     get_v2_retrain_use_case,
     get_v2_history_use_case,
+    get_v2_predict_all_use_case,
+    get_v2_resumen_use_case,
     get_classifier,
 )
 from app.modules.supervised.application.predict_use_case import V2PredictUseCase
 from app.modules.supervised.application.retrain_use_case import V2RetrainUseCase
 from app.modules.supervised.application.history_use_case import V2HistoryUseCase
+from app.modules.supervised.application.predict_all_use_case import PredictAllUseCase
+from app.modules.supervised.application.resumen_use_case import ResumenUseCase
 from app.modules.supervised.infra.ml.classifier_service import ResNetClassifierService
 
 router = APIRouter(tags=["Supervised"])
@@ -49,6 +56,71 @@ async def predict_v2(
         confianza=pred.confianza,
         prob_dist=pred.prob_dist,
         created_at=pred.created_at.isoformat(),
+    )
+
+
+@router.post(
+    "/predict-all",
+    response_model=PredictAllResponse,
+    summary="[v2] Clasificar múltiples imágenes con deduplicación",
+    description="Recibe N imágenes, detecta duplicados por pHash, clasifica las únicas y retorna todos los resultados.",
+)
+async def predict_all_v2(
+    files: list[UploadFile] = File(..., description="Imágenes del vehículo (JPG/PNG)"),
+    use_case: PredictAllUseCase = Depends(get_v2_predict_all_use_case),
+):
+    if len(files) == 0:
+        raise HTTPException(status_code=400, detail="Se requiere al menos una imagen")
+    if len(files) > 50:
+        raise HTTPException(status_code=400, detail="Máximo 50 imágenes por request")
+
+    images: list[tuple[str, bytes]] = []
+    for f in files:
+        if f.content_type and not f.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail=f"{f.filename} no es una imagen")
+        contents = await f.read()
+        if len(contents) == 0:
+            raise HTTPException(status_code=400, detail=f"{f.filename} está vacío")
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"{f.filename} excede 10MB")
+        images.append((f.filename or "unknown", contents))
+
+    result = await use_case.execute(images)
+    return PredictAllResponse(
+        predicciones=[
+            {
+                "filename": p.filename,
+                "phash": p.phash,
+                "tipo_dano": p.tipo_dano,
+                "severidad": p.severidad,
+                "confianza": p.confianza,
+                "duplicado_de": p.duplicado_de,
+            }
+            for p in result.predicciones
+        ],
+        resumen={
+            "total_imagenes": result.total_imagenes,
+            "imagenes_unicas": result.imagenes_unicas,
+            "duplicados_detectados": result.duplicados_detectados,
+        },
+    )
+
+
+@router.post(
+    "/obtener-resumen",
+    response_model=ResumenResponse,
+    summary="[v2] Obtener resumen de costos de reparación",
+    description="Recibe una lista de daños con severidad y retorna el costo total estimado basado en la matriz de daños.",
+)
+async def obtener_resumen_v2(
+    body: ResumenRequest,
+    use_case: ResumenUseCase = Depends(get_v2_resumen_use_case),
+):
+    result = use_case.execute([{"tipo": d.tipo, "severidad": d.severidad} for d in body.danos])
+    return ResumenResponse(
+        precio_total=result.precio_total,
+        danos=[{"tipo": d.tipo, "severidad": d.severidad, "costo_reparacion": d.costo_reparacion} for d in result.danos],
+        moneda=result.moneda,
     )
 
 
