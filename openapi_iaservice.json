@@ -443,6 +443,90 @@
         }
       }
     },
+    "/api/v2/predict-all": {
+      "post": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Clasificar múltiples imágenes con deduplicación",
+        "description": "Recibe N imágenes, detecta duplicados por pHash, clasifica las únicas y retorna todos los resultados.",
+        "operationId": "predict_all_v2_api_v2_predict_all_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predict_all_v2_api_v2_predict_all_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictAllResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/obtener-resumen": {
+      "post": {
+        "tags": [
+          "Supervised"
+        ],
+        "summary": "[v2] Obtener resumen de costos de reparación",
+        "description": "Recibe una lista de daños con severidad y retorna el costo total estimado basado en la matriz de daños.",
+        "operationId": "obtener_resumen_v2_api_v2_obtener_resumen_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/retrain": {
       "post": {
         "tags": [
@@ -960,6 +1044,24 @@
         ],
         "title": "Body_ocr_api_v1_ocr_post"
       },
+      "Body_predict_all_v2_api_v2_predict_all_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "Imágenes del vehículo (JPG/PNG)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_predict_all_v2_api_v2_predict_all_post"
+      },
       "Body_predict_api_v1_predict_post": {
         "properties": {
           "file": {
@@ -1102,6 +1204,47 @@
           "confianza"
         ],
         "title": "DamageEntityResponse"
+      },
+      "DanoRequest": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "severidad"
+        ],
+        "title": "DanoRequest"
+      },
+      "DanoResumen": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "costo_reparacion": {
+            "type": "number",
+            "title": "Costo Reparacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "severidad",
+          "costo_reparacion"
+        ],
+        "title": "DanoResumen"
       },
       "ExtractAndValidateResponse": {
         "properties": {
@@ -1576,6 +1719,93 @@
         ],
         "title": "PolizaExtractedResponse"
       },
+      "PredictAllItem": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "phash": {
+            "type": "string",
+            "title": "Phash"
+          },
+          "tipo_dano": {
+            "type": "string",
+            "title": "Tipo Dano"
+          },
+          "severidad": {
+            "type": "string",
+            "title": "Severidad"
+          },
+          "confianza": {
+            "type": "number",
+            "title": "Confianza"
+          },
+          "duplicado_de": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicado De"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "phash",
+          "tipo_dano",
+          "severidad",
+          "confianza"
+        ],
+        "title": "PredictAllItem"
+      },
+      "PredictAllResponse": {
+        "properties": {
+          "predicciones": {
+            "items": {
+              "$ref": "#/components/schemas/PredictAllItem"
+            },
+            "type": "array",
+            "title": "Predicciones"
+          },
+          "resumen": {
+            "$ref": "#/components/schemas/PredictAllSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "predicciones",
+          "resumen"
+        ],
+        "title": "PredictAllResponse"
+      },
+      "PredictAllSummary": {
+        "properties": {
+          "total_imagenes": {
+            "type": "integer",
+            "title": "Total Imagenes"
+          },
+          "imagenes_unicas": {
+            "type": "integer",
+            "title": "Imagenes Unicas"
+          },
+          "duplicados_detectados": {
+            "type": "integer",
+            "title": "Duplicados Detectados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_imagenes",
+          "imagenes_unicas",
+          "duplicados_detectados"
+        ],
+        "title": "PredictAllSummary"
+      },
       "PredictResponse": {
         "properties": {
           "id": {
@@ -1618,6 +1848,48 @@
           "created_at"
         ],
         "title": "PredictResponse"
+      },
+      "ResumenRequest": {
+        "properties": {
+          "danos": {
+            "items": {
+              "$ref": "#/components/schemas/DanoRequest"
+            },
+            "type": "array",
+            "title": "Danos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "danos"
+        ],
+        "title": "ResumenRequest"
+      },
+      "ResumenResponse": {
+        "properties": {
+          "precio_total": {
+            "type": "number",
+            "title": "Precio Total"
+          },
+          "danos": {
+            "items": {
+              "$ref": "#/components/schemas/DanoResumen"
+            },
+            "type": "array",
+            "title": "Danos"
+          },
+          "moneda": {
+            "type": "string",
+            "title": "Moneda"
+          }
+        },
+        "type": "object",
+        "required": [
+          "precio_total",
+          "danos",
+          "moneda"
+        ],
+        "title": "ResumenResponse"
       },
       "RetrainResponse": {
         "properties": {
