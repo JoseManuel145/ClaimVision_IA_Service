@@ -62,7 +62,18 @@ class PyMuPDFOCRService:
         enhanced_has_mrz = bool(self._MRZ_PATTERN.search(text_enhanced.upper()))
         if simple_has_mrz and not enhanced_has_mrz:
             return text_simple
-        if len(text_enhanced) > len(text_simple) * 1.2:
+        if enhanced_has_mrz and not simple_has_mrz:
+            return text_enhanced
+        # Prefer enhanced si tiene campos válidos (CLAVE/CURP) aunque
+        # tenga menos caracteres totales
+        _valid_field = re.compile(
+            r"(?:CLAVE\s*(?:DE\s*)?ELECTOR|CURP|RFC|SEXO|NOMBRE)",
+        )
+        simple_fields = len(_valid_field.findall(text_simple.upper()))
+        enhanced_fields = len(_valid_field.findall(text_enhanced.upper()))
+        if enhanced_fields > simple_fields:
+            return text_enhanced
+        if len(text_enhanced) > len(text_simple) * 0.6:
             return text_enhanced
         return text_simple
 

@@ -86,7 +86,7 @@ async def ocr_history(
     "/ocr/extract-poliza",
     response_model=PolizaExtractedResponse,
     summary="Extraer datos estructurados de una poliza de seguro",
-    description="Recibe un PDF de poliza, extrae texto con OCR y estructura los campos con LLM.",
+    description="Recibe un PDF de poliza, extrae texto con OCR y estructura los campos con regex.",
 )
 async def extract_poliza(
     file: UploadFile = File(..., description="PDF de la poliza de seguro"),
@@ -123,7 +123,7 @@ async def extract_poliza(
     "/ocr/extract-ine",
     response_model=IneExtractedResponse,
     summary="Extraer datos estructurados de una credencial INE",
-    description="Recibe una imagen o PDF de credencial INE, extrae texto con OCR y estructura los campos con LLM.",
+    description="Recibe una imagen o PDF de credencial INE, extrae texto con OCR y estructura los campos con regex.",
 )
 async def extract_ine(
     file: UploadFile = File(..., description="Imagen o PDF de la credencial INE"),
