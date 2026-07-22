@@ -15,6 +15,7 @@ cycler==0.12.1
 et_xmlfile==2.0.0
 fastapi==0.138.1
 faster-whisper==1.2.1
+groq>=0.13.0
 filelock==3.29.0
 flatbuffers==25.12.19
 fonttools==4.63.0

@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     MIN_CONFIDENCE_THRESHOLD: float = 0.35
     OLLAMA_URL: str = "http://ollama:11434"
     OLLAMA_MODEL: str = "qwen2.5:3b"
+    GROQ_API_KEY: str = ""
+    GROQ_LLM_MODEL: str = "llama-3.1-8b-instant"
+    GROQ_WHISPER_MODEL: str = "whisper-large-v3-turbo"
 
     class Config:
         env_file = ".env"

@@ -18,7 +18,7 @@ from app.modules.nlp.presentation.dependencies import (
 from app.modules.nlp.application.transcribir_use_case import TranscribirUseCase
 from app.modules.nlp.application.transcripcion_job_use_case import TranscripcionJobUseCase
 from app.modules.nlp.application.history_use_case import HistoryUseCase
-from app.modules.nlp.infra.llm.ollama_extractor import OllamaExtractor
+from app.modules.nlp.infra.llm.groq_extractor import GroqExtractor
 
 router = APIRouter(tags=["NLP"])
 
@@ -103,7 +103,7 @@ async def transcribir_status(
 )
 async def analizar(
     body: AnalizarRequest,
-    llm: OllamaExtractor = Depends(get_llm_service),
+    llm: GroqExtractor = Depends(get_llm_service),
 ):
     entidades = await llm.extraer_danos(body.texto)
     return AnalizarResponse(
