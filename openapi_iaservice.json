@@ -10,8 +10,8 @@
         "tags": [
           "No Supervised"
         ],
-        "summary": "Predecir tipo de daño vehicular",
-        "description": "Recibe una imagen de daño vehicular, la procesa a través del encoder y K-Means, y devuelve el tipo de daño, severidad y confianza.",
+        "summary": "Predecir tipo de da\u00f1o vehicular",
+        "description": "Recibe una imagen de da\u00f1o vehicular, la procesa a trav\u00e9s del encoder y K-Means, y devuelve el tipo de da\u00f1o, severidad y confianza.",
         "operationId": "predict_api_v1_predict_post",
         "requestBody": {
           "content": {
@@ -63,11 +63,11 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "description": "Número de página",
+              "description": "N\u00famero de p\u00e1gina",
               "default": 1,
               "title": "Page"
             },
-            "description": "Número de página"
+            "description": "N\u00famero de p\u00e1gina"
           },
           {
             "name": "limit",
@@ -77,11 +77,11 @@
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "description": "Elementos por página",
+              "description": "Elementos por p\u00e1gina",
               "default": 20,
               "title": "Limit"
             },
-            "description": "Elementos por página"
+            "description": "Elementos por p\u00e1gina"
           }
         ],
         "responses": {
@@ -114,7 +114,7 @@
           "No Supervised"
         ],
         "summary": "Re-entrenar K-Means",
-        "description": "[Admin] Recibe un conjunto de imágenes y re-entrena el modelo K-Means. Requiere al menos K imágenes.",
+        "description": "[Admin] Recibe un conjunto de im\u00e1genes y re-entrena el modelo K-Means. Requiere al menos K im\u00e1genes.",
         "operationId": "retrain_api_v1_retrain_post",
         "requestBody": {
           "content": {
@@ -156,7 +156,7 @@
           "No Supervised"
         ],
         "summary": "Verificar estado del servicio",
-        "description": "Indica si los modelos están cargados correctamente.",
+        "description": "Indica si los modelos est\u00e1n cargados correctamente.",
         "operationId": "health_api_v1_health_get",
         "responses": {
           "200": {
@@ -230,11 +230,11 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "description": "Número de página",
+              "description": "N\u00famero de p\u00e1gina",
               "default": 1,
               "title": "Page"
             },
-            "description": "Número de página"
+            "description": "N\u00famero de p\u00e1gina"
           },
           {
             "name": "limit",
@@ -244,11 +244,11 @@
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "description": "Elementos por página",
+              "description": "Elementos por p\u00e1gina",
               "default": 20,
               "title": "Limit"
             },
-            "description": "Elementos por página"
+            "description": "Elementos por p\u00e1gina"
           }
         ],
         "responses": {
@@ -281,7 +281,7 @@
           "OCR"
         ],
         "summary": "Extraer datos estructurados de una poliza de seguro",
-        "description": "Recibe un PDF de poliza, extrae texto con OCR y estructura los campos con LLM.",
+        "description": "Recibe un PDF de poliza, extrae texto con OCR y estructura los campos con regex.",
         "operationId": "extract_poliza_api_v1_ocr_extract_poliza_post",
         "requestBody": {
           "content": {
@@ -323,7 +323,7 @@
           "OCR"
         ],
         "summary": "Extraer datos estructurados de una credencial INE",
-        "description": "Recibe una imagen o PDF de credencial INE, extrae texto con OCR y estructura los campos con LLM.",
+        "description": "Recibe una imagen o PDF de credencial INE, extrae texto con OCR y estructura los campos con regex.",
         "operationId": "extract_ine_api_v1_ocr_extract_ine_post",
         "requestBody": {
           "content": {
@@ -406,8 +406,8 @@
         "tags": [
           "Supervised"
         ],
-        "summary": "[v2] Clasificar daño vehicular",
-        "description": "Usa modelo supervisado (ResNet18) para clasificar el daño en 7 clases incluyendo Sin Daño.",
+        "summary": "[v2] Clasificar da\u00f1o vehicular",
+        "description": "Usa modelo supervisado (ResNet18) para clasificar el da\u00f1o en 7 clases incluyendo Sin Da\u00f1o.",
         "operationId": "predict_v2_api_v2_predict_post",
         "requestBody": {
           "content": {
@@ -448,8 +448,8 @@
         "tags": [
           "Supervised"
         ],
-        "summary": "[v2] Clasificar múltiples imágenes con deduplicación",
-        "description": "Recibe N imágenes, detecta duplicados por pHash, clasifica las únicas y retorna todos los resultados.",
+        "summary": "[v2] Clasificar m\u00faltiples im\u00e1genes con deduplicaci\u00f3n",
+        "description": "Recibe N im\u00e1genes, detecta duplicados por pHash, clasifica las \u00fanicas y retorna todos los resultados.",
         "operationId": "predict_all_v2_api_v2_predict_all_post",
         "requestBody": {
           "content": {
@@ -490,8 +490,8 @@
         "tags": [
           "Supervised"
         ],
-        "summary": "[v2] Obtener resumen de costos de reparación",
-        "description": "Recibe una lista de daños con severidad y retorna el costo total estimado basado en la matriz de daños.",
+        "summary": "[v2] Obtener resumen de costos de reparaci\u00f3n",
+        "description": "Recibe una lista de da\u00f1os con severidad y retorna el costo total estimado basado en la matriz de da\u00f1os.",
         "operationId": "obtener_resumen_v2_api_v2_obtener_resumen_post",
         "requestBody": {
           "content": {
@@ -533,7 +533,7 @@
           "Supervised"
         ],
         "summary": "[v2] Re-entrenar modelo supervisado",
-        "description": "Inicia entrenamiento async del clasificador. Enviar labels como JSON + imágenes.",
+        "description": "Inicia entrenamiento async del clasificador. Enviar labels como JSON + im\u00e1genes.",
         "operationId": "retrain_v2_api_v2_retrain_post",
         "requestBody": {
           "content": {
@@ -575,7 +575,7 @@
           "Supervised"
         ],
         "summary": "[v2] Estado del re-entreno",
-        "description": "Consulta el progreso del entrenamiento asíncrono.",
+        "description": "Consulta el progreso del entrenamiento as\u00edncrono.",
         "operationId": "retrain_status_api_v2_retrain__job_id__get",
         "parameters": [
           {
@@ -628,11 +628,11 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "description": "Número de página",
+              "description": "N\u00famero de p\u00e1gina",
               "default": 1,
               "title": "Page"
             },
-            "description": "Número de página"
+            "description": "N\u00famero de p\u00e1gina"
           },
           {
             "name": "limit",
@@ -642,11 +642,11 @@
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "description": "Elementos por página",
+              "description": "Elementos por p\u00e1gina",
               "default": 20,
               "title": "Limit"
             },
-            "description": "Elementos por página"
+            "description": "Elementos por p\u00e1gina"
           }
         ],
         "responses": {
@@ -1053,7 +1053,7 @@
             },
             "type": "array",
             "title": "Files",
-            "description": "Imágenes del vehículo (JPG/PNG)"
+            "description": "Im\u00e1genes del veh\u00edculo (JPG/PNG)"
           }
         },
         "type": "object",
@@ -1068,7 +1068,7 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "Imagen del daño vehicular (JPG/PNG)"
+            "description": "Imagen del da\u00f1o vehicular (JPG/PNG)"
           }
         },
         "type": "object",
@@ -1083,7 +1083,7 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "Imagen del vehículo (JPG/PNG)"
+            "description": "Imagen del veh\u00edculo (JPG/PNG)"
           }
         },
         "type": "object",
@@ -1099,7 +1099,7 @@
             "maximum": 20.0,
             "minimum": 2.0,
             "title": "K",
-            "description": "Número de clústeres"
+            "description": "N\u00famero de cl\u00fasteres"
           },
           "files": {
             "items": {
@@ -1108,7 +1108,7 @@
             },
             "type": "array",
             "title": "Files",
-            "description": "Imágenes para re-entrenamiento (mínimo K)"
+            "description": "Im\u00e1genes para re-entrenamiento (m\u00ednimo K)"
           }
         },
         "type": "object",
@@ -1132,14 +1132,14 @@
             },
             "type": "array",
             "title": "Files",
-            "description": "Imágenes del dataset"
+            "description": "Im\u00e1genes del dataset"
           },
           "epochs": {
             "type": "integer",
             "maximum": 100.0,
             "minimum": 1.0,
             "title": "Epochs",
-            "description": "Cantidad de épocas",
+            "description": "Cantidad de \u00e9pocas",
             "default": 40
           },
           "lr": {
