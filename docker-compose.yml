@@ -11,6 +11,13 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - GROQ_LLM_MODEL=openai/gpt-oss-20b
       - GROQ_WHISPER_MODEL=whisper-large-v3-turbo
+      - SSL_VERIFY=${SSL_VERIFY}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
+      - http_proxy=${http_proxy}
+      - https_proxy=${https_proxy}
+      - no_proxy=${no_proxy}
     volumes:
       - ./models:/app/models
     restart: unless-stopped

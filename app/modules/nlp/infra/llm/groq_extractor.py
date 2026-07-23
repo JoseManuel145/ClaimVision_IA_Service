@@ -1,4 +1,5 @@
 import json
+import httpx
 from groq import Groq
 from app.modules.nlp.domain.models import DamageEntity
 
@@ -13,8 +14,14 @@ _SYS = (
 
 
 class GroqExtractor:
-    def __init__(self, api_key: str, model: str = "llama-3.1-8b-instant"):
-        self.client = Groq(api_key=api_key)
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "llama-3.1-8b-instant",
+        ssl_verify: bool = True,
+    ):
+        http_client = httpx.Client(verify=ssl_verify, timeout=60.0)
+        self.client = Groq(api_key=api_key, http_client=http_client)
         self.model = model
 
     async def extraer_danos(self, texto: str) -> list[DamageEntity]:

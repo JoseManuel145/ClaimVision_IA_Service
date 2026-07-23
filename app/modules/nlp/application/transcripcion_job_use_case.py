@@ -10,6 +10,10 @@ from app.modules.nlp.infra.db.repository import (
     PostgresTranscripcionJobRepository,
     PostgresVozRepository,
 )
+from app.core.logging import get_logger
+
+logger = get_logger("transcripcion_job_use_case")
+
 
 
 class TranscripcionJobUseCase:
@@ -76,6 +80,7 @@ class TranscripcionJobUseCase:
                 )
 
             except Exception as e:
+                logger.error(f"Error procesando transcripcion de job {job_id}: {e}", exc_info=True)
                 await self._set_job(job_repo, job_id, status="failed", error=str(e))
 
     async def _set_job(

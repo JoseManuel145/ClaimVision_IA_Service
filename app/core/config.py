@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_LLM_MODEL: str = "llama-3.1-8b-instant"
     GROQ_WHISPER_MODEL: str = "whisper-large-v3-turbo"
+    SSL_VERIFY: bool = True
 
     class Config:
         env_file = ".env"

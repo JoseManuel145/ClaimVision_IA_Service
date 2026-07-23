@@ -20,6 +20,7 @@ def get_stt_service() -> GroqSTTService:
     return GroqSTTService(
         api_key=settings.GROQ_API_KEY,
         model=settings.GROQ_WHISPER_MODEL,
+        ssl_verify=settings.SSL_VERIFY,
     )
 
 
@@ -27,6 +28,7 @@ def get_llm_service() -> GroqExtractor:
     return GroqExtractor(
         api_key=settings.GROQ_API_KEY,
         model=settings.GROQ_LLM_MODEL,
+        ssl_verify=settings.SSL_VERIFY,
     )
 
 
