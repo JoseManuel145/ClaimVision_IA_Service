@@ -50,16 +50,14 @@ class ImageValidator:
 
             worst_result = None
             for page in doc:
-                for img_info in page.get_images(full=True):
-                    xref = img_info[0]
-                    base = doc.extract_image(xref)
-                    img = Image.open(BytesIO(base["image"]))
-                    result = self._validate_image_data(img, DocumentType.INE)
-                    if worst_result is None or len(result.errors) > len(worst_result.errors):
-                        worst_result = result
+                pix = page.get_pixmap(dpi=200)
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                result = self._validate_image_data(img, DocumentType.INE)
+                if worst_result is None or len(result.errors) > len(worst_result.errors):
+                    worst_result = result
 
             doc.close()
-            return worst_result or self._fail_result("No se encontraron imagenes en el PDF")
+            return worst_result or self._fail_result("No se pudo procesar el PDF")
         except Exception as e:
             return self._fail_result(f"Error al procesar PDF: {str(e)}")
 
@@ -73,16 +71,14 @@ class ImageValidator:
 
             worst_result = None
             for page in doc:
-                for img_info in page.get_images(full=True):
-                    xref = img_info[0]
-                    base = doc.extract_image(xref)
-                    img = Image.open(BytesIO(base["image"]))
-                    result = self._validate_image_data(img, doc_type)
-                    if worst_result is None or len(result.errors) > len(worst_result.errors):
-                        worst_result = result
+                pix = page.get_pixmap(dpi=200)
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                result = self._validate_image_data(img, doc_type)
+                if worst_result is None or len(result.errors) > len(worst_result.errors):
+                    worst_result = result
 
             doc.close()
-            return worst_result or self._fail_result("No se encontraron imagenes en el PDF")
+            return worst_result or self._fail_result("No se pudo procesar el PDF")
         except Exception as e:
             return self._fail_result(f"Error al procesar PDF: {str(e)}")
 
