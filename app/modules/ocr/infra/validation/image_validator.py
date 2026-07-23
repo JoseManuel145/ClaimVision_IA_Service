@@ -41,39 +41,49 @@ class ImageValidator:
         return await self._validate_pdf(file_bytes, DocumentType.POLIZA)
 
     async def _validate_ine_pdf(self, pdf_bytes: bytes) -> ValidationResult:
-        try:
-            import fitz
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            if len(doc) == 0:
-                doc.close()
-                return self._fail_result("El PDF no contiene paginas")
-
-            worst_result = None
-            for page in doc:
-                pix = page.get_pixmap(dpi=200)
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                result = self._validate_image_data(img, DocumentType.INE)
-                if worst_result is None or len(result.errors) > len(worst_result.errors):
-                    worst_result = result
-
-            doc.close()
-            return worst_result or self._fail_result("No se pudo procesar el PDF")
-        except Exception as e:
-            return self._fail_result(f"Error al procesar PDF: {str(e)}")
+        return await self._validate_pdf_document(pdf_bytes, DocumentType.INE)
 
     async def _validate_pdf(self, pdf_bytes: bytes, doc_type: DocumentType) -> ValidationResult:
+        return await self._validate_pdf_document(pdf_bytes, doc_type)
+
+    async def _validate_pdf_document(self, pdf_bytes: bytes, doc_type: DocumentType) -> ValidationResult:
         try:
             import fitz
+            import math
             doc = fitz.open(stream=pdf_bytes, filetype="pdf")
             if len(doc) == 0:
                 doc.close()
                 return self._fail_result("El PDF no contiene paginas")
 
+            # Check if it has selectable text (digital PDF)
+            has_text = False
+            for page in doc:
+                if page.get_text().strip():
+                    has_text = True
+                    break
+
+            if has_text:
+                # Digital PDF: bypass standard image quality checks
+                doc.close()
+                return ValidationResult(is_valid=True)
+
+            # Scanned PDF: render pages and validate images
             worst_result = None
             for page in doc:
-                pix = page.get_pixmap(dpi=200)
+                # Calculate DPI dynamically to meet resolution targets if physical size is small
+                min_w = self.POLIZA_MIN_WIDTH if doc_type == DocumentType.POLIZA else self.INE_MIN_WIDTH
+                min_h = self.POLIZA_MIN_HEIGHT if doc_type == DocumentType.POLIZA else self.INE_MIN_HEIGHT
+                
+                dpi_w = (min_w * 72.0) / page.rect.width if page.rect.width > 0 else 200.0
+                dpi_h = (min_h * 72.0) / page.rect.height if page.rect.height > 0 else 200.0
+                
+                required_dpi = int(math.ceil(max(200.0, dpi_w, dpi_h)))
+                required_dpi = min(400, required_dpi)
+
+                pix = page.get_pixmap(dpi=required_dpi)
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                result = self._validate_image_data(img, doc_type)
+                
+                result = self._validate_image_data(img, doc_type, is_pdf=True)
                 if worst_result is None or len(result.errors) > len(worst_result.errors):
                     worst_result = result
 
@@ -89,7 +99,7 @@ class ImageValidator:
         except Exception as e:
             return self._fail_result(f"Error al abrir imagen: {str(e)}")
 
-    def _validate_image_data(self, img: Image.Image, doc_type: DocumentType) -> ValidationResult:
+    def _validate_image_data(self, img: Image.Image, doc_type: DocumentType, is_pdf: bool = False) -> ValidationResult:
         if doc_type == DocumentType.INE:
             min_w, min_h = self.INE_MIN_WIDTH, self.INE_MIN_HEIGHT
             target_ratios = self.INE_ASPECT_RATIOS
@@ -137,7 +147,7 @@ class ImageValidator:
             result.add_error(
                 f"Imagen oscura (brillo: {brightness:.1f}, minimo: {brightness_min})"
             )
-        elif brightness > brightness_max:
+        elif not is_pdf and brightness > brightness_max:
             result.add_error(
                 f"Imagen sobreexpuesta (brillo: {brightness:.1f}, maximo: {brightness_max})"
             )
