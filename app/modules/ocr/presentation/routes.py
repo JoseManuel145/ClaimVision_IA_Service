@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Query
+from app.core.logging import get_logger
+
+logger = get_logger("ocr.presentation")
 from app.modules.ocr.presentation.schemas import (
     OcrResponse,
     OcrHistoryResponse,
@@ -100,23 +103,42 @@ async def extract_poliza(
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="El PDF excede 10MB")
 
-    result = await use_case.execute(contents, file.filename or "unknown")
-    data = result.extracted_data
-    return PolizaExtractedResponse(
-        id=result.id,
-        filename=result.filename,
-        numero_poliza=data.get("numero_poliza", ""),
-        aseguradora=data.get("aseguradora", ""),
-        nombre_asegurado=data.get("nombre_asegurado", ""),
-        vehiculo_marca=data.get("vehiculo_marca", ""),
-        vehiculo_modelo=data.get("vehiculo_modelo", ""),
-        vehiculo_anio=data.get("vehiculo_anio", 0),
-        vehiculo_placas=data.get("vehiculo_placas", ""),
-        vehiculo_vin=data.get("vehiculo_vin"),
-        vehiculo_color=data.get("vehiculo_color"),
-        vigencia_inicio=data.get("vigencia_inicio") or "",
-        vigencia_fin=data.get("vigencia_fin") or "",
+    logger.info(
+        "Petición extract_poliza recibida: filename=%s, size=%d bytes",
+        file.filename,
+        len(contents),
     )
+    try:
+        result = await use_case.execute(contents, file.filename or "unknown")
+        data = result.extracted_data
+        logger.info(
+            "Extracción de póliza exitosa para %s. Datos extraídos: %s",
+            file.filename,
+            data,
+        )
+        return PolizaExtractedResponse(
+            id=result.id,
+            filename=result.filename,
+            numero_poliza=data.get("numero_poliza", ""),
+            aseguradora=data.get("aseguradora", ""),
+            nombre_asegurado=data.get("nombre_asegurado", ""),
+            vehiculo_marca=data.get("vehiculo_marca", ""),
+            vehiculo_modelo=data.get("vehiculo_modelo", ""),
+            vehiculo_anio=data.get("vehiculo_anio", 0),
+            vehiculo_placas=data.get("vehiculo_placas", ""),
+            vehiculo_vin=data.get("vehiculo_vin"),
+            vehiculo_color=data.get("vehiculo_color"),
+            vigencia_inicio=data.get("vigencia_inicio") or "",
+            vigencia_fin=data.get("vigencia_fin") or "",
+        )
+    except Exception as e:
+        logger.error(
+            "Error al extraer datos de póliza %s: %s",
+            file.filename,
+            str(e),
+            exc_info=True,
+        )
+        raise
 
 
 @router.post(
